@@ -57,6 +57,7 @@ class MovieClip extends flash.display.MovieClip {
 	public var scale9BitmapGrid(get, set):Rectangle;
 	private var _scale9BitmapGrid:Rectangle;
 	private var _scale9BitmapData:BitmapData;
+	private var _scale9Offset:Point;
 	private var _scale9ScaleX:Float = 1;
 	private var _scale9ScaleY:Float = 1;
 	
@@ -625,7 +626,7 @@ class MovieClip extends flash.display.MovieClip {
 
 		if (_scale9BitmapData != null) {
 
-				drawScale9Bitmap(_scale9BitmapData, _scale9BitmapData.width * _scale9ScaleX, _scale9BitmapData.height * _scale9ScaleY, _scale9BitmapGrid);
+				drawScale9Bitmap(_scale9BitmapData, _scale9BitmapData.width * _scale9ScaleX, _scale9BitmapData.height * _scale9ScaleY, _scale9BitmapGrid, _scale9Offset);
 
 		}
 
@@ -633,7 +634,7 @@ class MovieClip extends flash.display.MovieClip {
 
 
 
-	private function drawScale9Bitmap(bitmap : BitmapData, drawWidth:Float, drawHeight:Float, scale9Rect:Rectangle):Void {
+	private function drawScale9Bitmap(bitmap : BitmapData, drawWidth:Float, drawHeight:Float, scale9Rect:Rectangle, offset:Point):Void {
 
 		graphics.clear();
 
@@ -644,8 +645,8 @@ class MovieClip extends flash.display.MovieClip {
 		var outerHeight = bitmap.height - (rows[2] - rows[1]);
 		var innerScaleX = (drawWidth - outerWidth) / (bitmap.width - outerWidth);
 		var innerScaleY = (drawHeight - outerHeight) / (bitmap.height - outerHeight);
-		var dx = 0.0;
-		var dy = 0.0;
+		var dx = offset.x;
+		var dy = offset.y;
 		var w = 0.0;
 		var h = 0.0;
 
@@ -662,7 +663,7 @@ class MovieClip extends flash.display.MovieClip {
 				matrix.identity();
 				matrix.translate(dx-sourceX, dy-sourceY);
 
-		//scale the middle section
+				//scale the middle section
 				if(row == 1) {
 
 					h *= innerScaleY;
@@ -679,7 +680,7 @@ class MovieClip extends flash.display.MovieClip {
 
 				}
 
-//now draw it
+				//now draw it
 				graphics.beginBitmapFill(bitmap, matrix, false, true);
 				graphics.drawRect(dx, dy, w, h);
 				graphics.endFill();
@@ -687,7 +688,7 @@ class MovieClip extends flash.display.MovieClip {
 
 			}
 
-			dx = 0;
+			dx = offset.x;
 			dy += h;
 
 		}
@@ -783,7 +784,7 @@ class MovieClip extends flash.display.MovieClip {
 			var bmp:flash.display.Bitmap = cast(getChildAt(0), flash.display.Bitmap);
 			
 			_scale9BitmapData = bmp.bitmapData;
-	
+			_scale9Offset = new Point(bmp.x, bmp.y);
 			drawScale9BitmapData();
 			removeChild(bmp);
 			
