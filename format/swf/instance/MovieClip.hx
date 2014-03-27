@@ -645,8 +645,10 @@ class MovieClip extends flash.display.MovieClip {
 		var outerHeight = bitmap.height - (rows[2] - rows[1]);
 		var innerScaleX = (drawWidth - outerWidth) / (bitmap.width - outerWidth);
 		var innerScaleY = (drawHeight - outerHeight) / (bitmap.height - outerHeight);
-		var dx = offset.x;
-		var dy = offset.y;
+		var scaleX = drawWidth / bitmap.width;
+		var scaleY = drawHeight / bitmap.height;
+		var dx = offset.x * scaleX;
+		var dy = offset.y * scaleY;
 		var w = 0.0;
 		var h = 0.0;
 
@@ -665,18 +667,22 @@ class MovieClip extends flash.display.MovieClip {
 
 				//scale the middle section
 				if(row == 1) {
-
+				
 					h *= innerScaleY;
-					matrix.scale(1, innerScaleY);
-					matrix.translate(0, dy - sourceY * innerScaleY);
+					matrix.translate(0, sourceY - dy); //undo the previous translation
+					matrix.translate(0, offset.y); //start at the offset
+					matrix.scale(1, innerScaleY); //scale it to the right size
+					matrix.translate(0, dy - sourceY * innerScaleY); //move it so that the middle section is being drawn
 
 				}
 
 				if(col == 1) {
 
 					w *= innerScaleX;
-					matrix.scale(innerScaleX, 1);
-					matrix.translate(dx - sourceX * innerScaleX, 0);
+					matrix.translate(sourceX - dx, 0); //undo the previous translation
+					matrix.translate(offset.x, 0); //start it at the offset
+					matrix.scale(innerScaleX, 1); //scale it to the right size
+					matrix.translate(dx - sourceX * innerScaleX, 0); //move it so that the middle section is being drawn
 
 				}
 
@@ -688,7 +694,7 @@ class MovieClip extends flash.display.MovieClip {
 
 			}
 
-			dx = offset.x;
+			dx = offset.x * scaleX;
 			dy += h;
 
 		}
