@@ -667,7 +667,7 @@ class MovieClip extends flash.display.MovieClip {
 
 				//scale the middle section
 				if(row == 1) {
-				
+
 					h *= innerScaleY;
 					matrix.translate(0, sourceY - dy); //undo the previous translation
 					matrix.translate(0, offset.y); //start at the offset
