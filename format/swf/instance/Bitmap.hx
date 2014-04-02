@@ -1,6 +1,8 @@
 package format.swf.instance;
 
 
+import openfl.Assets;
+import haxe.Timer;
 import flash.display.BitmapData;
 import flash.utils.ByteArray;
 import flash.utils.CompressionAlgorithm;
@@ -15,11 +17,23 @@ import format.swf.tags.TagDefineBitsJPEG2;
 class Bitmap extends flash.display.Bitmap {
 	
 	
-	public function new (tag:IDefinitionTag) {
+	public function new (data:SWFTimelineContainer, tag:IDefinitionTag) {
 		
 		super ();
-		
-		if (Std.is (tag, TagDefineBitsLossless)) {
+
+		var t = Timer.stamp();
+
+		//try get it from cache first
+
+		var cached = data.swf.getCachedBitmapData(tag.characterId);
+		trace("CREATING BITMAP, cached is = ", cached);
+		if( cached != null) {
+
+			trace("cache worked");
+			bitmapData = cached;
+
+		} else if (Std.is (tag, TagDefineBitsLossless)) {
+
 			
 			var data:TagDefineBitsLossless = cast tag;
 			
@@ -117,11 +131,14 @@ class Bitmap extends flash.display.Bitmap {
 				
 				bitmapData = new BitmapData (data.bitmapWidth, data.bitmapHeight, transparent);
 				bitmapData.setPixels (bitmapData.rect, buffer);
-				
+
+
+				var t2 = Timer.stamp();
 				#if (cpp || neko)
 				bitmapData.unmultiplyAlpha ();
 				//bitmapData.setAlphaMode (1);
 				#end
+				trace("unmultiply ", Timer.stamp() - t2);
 				
 				data.instance = bitmapData;
 				
@@ -140,14 +157,17 @@ class Bitmap extends flash.display.Bitmap {
 				#if !flash
 				
 				if (Std.is (tag, TagDefineBitsJPEG3)) {
-					
+
 					var alpha = cast (tag, TagDefineBitsJPEG3).bitmapAlphaData;
 					alpha.uncompress ();
-					
+
 					bitmapData = BitmapData.loadFromBytes (data.bitmapData, alpha);
+
+					var t2 = Timer.stamp();
 					bitmapData.unmultiplyAlpha ();
-					//bitmapData.setAlphaMode (1);
-					
+					trace("unmultiply ", Timer.stamp() - t2);
+//					bitmapData.setAlphaMode (1);
+
 				} else {
 					
 					bitmapData = BitmapData.loadFromBytes (data.bitmapData, null);
@@ -175,8 +195,10 @@ class Bitmap extends flash.display.Bitmap {
 			bitmapData = BitmapData.loadFromBytes (data.bitmapData, null);
 			
 			#end
-			
+
 		}
+
+		trace("Creating Bitmap " + name + " took: " +  Math.max(Timer.stamp() - t, 0.0001));
 		
 		// TODO: Is there a way to catch "allow smoothing" from Flash?
 		

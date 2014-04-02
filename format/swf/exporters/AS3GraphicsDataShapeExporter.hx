@@ -73,7 +73,7 @@ class AS3GraphicsDataShapeExporter extends DefaultShapeExporter
 	override public function beginBitmapFill(bitmapId:Int, matrix:Matrix = null, repeat:Bool = true, smooth:Bool = false):Void {
 		cleanUpGraphicsPath();
 		var symbol = swf.getCharacter (bitmapId);
-		var bitmap = new Bitmap (symbol);
+		var bitmap = new Bitmap (swf, symbol);
 		if (bitmap.bitmapData != null) {
 			graphicsData.push (new GraphicsBitmapFill (bitmap.bitmapData, matrix, repeat, smooth));
 		}

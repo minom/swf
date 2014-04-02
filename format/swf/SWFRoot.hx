@@ -1,5 +1,6 @@
 ﻿package format.swf;
 
+import format.SWF;
 import format.abc.Data.ABCData;
 import format.abc.Data.ClassDef;
 import format.abc.Data.Field;
@@ -31,8 +32,10 @@ class SWFRoot extends SWFTimelineContainer
 	private static inline var FILE_LENGTH_POS:Int = 4;
 	private static inline var COMPRESSION_START_POS:Int = 8;
 	
-	public function new(ba:ByteArray = null) {
-		super ();
+	public function new(swf:SWF, ba:ByteArray = null) {
+
+		super (swf);
+
 		bytes = new SWFData();
 		if (ba != null) {
 			loadBytes(ba);

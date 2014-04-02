@@ -1,5 +1,6 @@
 ﻿package format.swf.factories;
 
+import format.swf.SWFRoot;
 import format.swf.tags.ITag;
 import format.swf.tags.Tag;
 import format.swf.tags.TagCSMTextSettings;
@@ -77,8 +78,13 @@ import format.swf.tags.etc.TagSWFEncryptSignature;
 
 class SWFTagFactory implements ISWFTagFactory
 {
-	public function new () {
-		
+
+	private	var swf:SWF;
+
+	public function new (swf:SWF) {
+
+		this.swf = swf;
+
 	}
 	
 	public function create(type:Int):ITag
@@ -190,7 +196,7 @@ class SWFTagFactory implements ISWFTagFactory
 	private function createTagDefineBitsJPEG3():ITag { return new TagDefineBitsJPEG3(); }
 	private function createTagDefineBitsLossless2():ITag { return new TagDefineBitsLossless2(); }
 	private function createTagDefineEditText():ITag { return new TagDefineEditText(); }
-	private function createTagDefineSprite():ITag { return new TagDefineSprite(); }
+	private function createTagDefineSprite():ITag { return new TagDefineSprite(swf); }
 	private function createTagProductInfo():ITag { return new TagProductInfo(); }
 	private function createTagFrameLabel():ITag { return new TagFrameLabel(); }
 	private function createTagSoundStreamHead2():ITag { return new TagSoundStreamHead2(); }

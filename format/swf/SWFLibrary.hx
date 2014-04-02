@@ -1,6 +1,7 @@
 package format.swf;
 
 
+import flash.display.PixelSnapping;
 import flash.display.BitmapData;
 import flash.display.Loader;
 import flash.display.MovieClip;
@@ -15,19 +16,22 @@ import openfl.Assets;
 
 
 @:keep class SWFLibrary extends AssetLibrary {
-	
-	
+
+
 	private var id:String;
 	private var loader:Loader;
 	private var swf:SWF;
+	private var cachePath:String;
+
 	
-	
-	public function new (id:String) {
+	public function new (id:String, cachePath:String) {
 		
 		super ();
-		
+
+
 		this.id = id;
-		
+		this.cachePath = cachePath;
+
 	}
 	
 	
@@ -71,7 +75,17 @@ import openfl.Assets;
 		return bmd;
 		
 		#else
-		
+
+
+		//try get from cache first
+		var path = cachePath + id + ".png";
+		if(Assets.exists(path)) {
+
+			return Assets.getBitmapData(path);
+
+		}
+
+
 		return swf.getBitmapData (id);
 		
 		#end
@@ -132,7 +146,7 @@ import openfl.Assets;
 		
 		if (swf == null) {
 			
-			swf = new SWF (Assets.getBytes (id));
+			swf = new SWF (Assets.getBytes (id), cachePath);
 			handler (this);
 			
 		}

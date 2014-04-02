@@ -52,7 +52,7 @@ class MorphShape extends flash.display.Shape {
 				
 				case BEGIN_BITMAP_FILL: 
 					
-					var bitmap = new Bitmap (cast data.getCharacter (command.params[0]));
+					var bitmap = new Bitmap (data, cast data.getCharacter (command.params[0]));
 					
 					if (bitmap.bitmapData != null) {
 						

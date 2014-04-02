@@ -2,6 +2,7 @@ package;
 
 
 import flash.utils.ByteArray;
+import format.swf.exporters.SWFBitmapExporter;
 import format.swf.exporters.SWFLiteExporter;
 import format.swf.lite.symbols.BitmapSymbol;
 import format.swf.lite.SWFLiteLibrary;
@@ -199,18 +200,35 @@ class Tools {
 			}
 			
 			if (type == "swf" && project.target != Platform.HTML5) {
-				
-				var swf = new Asset (library.sourcePath, "libraries/" + library.name + ".swf", AssetType.BINARY);
-				
+
+				//here, we are finding and caching all the bitmaps in the swf
+				var bytes = ByteArray.readFile (library.sourcePath);
+				var cachePath = "libraries/" + library.name + "/bin/";
+				var swf = new SWF (bytes, cachePath);
+				var exporter = new SWFBitmapExporter(swf.data);
+
+				for (id in exporter.bitmaps.keys ()) {
+
+					var bitmapData = exporter.bitmaps.get (id);
+					var bitmap = new Asset ("", cachePath + id + ".png", AssetType.IMAGE);
+					bitmap.data = StringHelper.base64Encode (bitmapData.encode ("png"));
+					bitmap.encoding = AssetEncoding.BASE64;
+					output.assets.push (bitmap);
+
+				}
+
+				//add the swf to the asset path
+				var swfAsset = new Asset (library.sourcePath, "libraries/" + library.name + ".swf", AssetType.BINARY);
+
 				if (library.embed != null) {
-					
-					swf.embed = library.embed;
+
+					swfAsset.embed = library.embed;
 					
 				}
 				
-				output.assets.push (swf);
+				output.assets.push (swfAsset);
 				
-				var data = new SWFLibrary ("libraries/" + library.name + ".swf");
+				var data = new SWFLibrary ("libraries/" + library.name + ".swf", cachePath);
 				var asset = new Asset ("", "libraries/" + library.name + ".dat", AssetType.TEXT);
 				asset.data = Serializer.run (data);
 				output.assets.push (asset);
@@ -240,7 +258,6 @@ class Tools {
 					//asset.data = bitmapData.encode ("png");
 					asset.encoding = AssetEncoding.BASE64;
 					output.assets.push (asset);
-					
 				}
 				
 				for (filterClass in exporter.filterClasses.keys ()) {

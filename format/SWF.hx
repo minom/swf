@@ -2,6 +2,9 @@ package format;
 
 
 import flash.display.BitmapData;
+import openfl.Assets;
+import haxe.Timer;
+import flash.display.BitmapData;
 import flash.events.Event;
 import flash.events.EventDispatcher;
 import flash.utils.ByteArray;
@@ -24,7 +27,7 @@ typedef Map<String, T> = Hash<T>;
 
 class SWF extends EventDispatcher {
 	
-	
+
 	public var data:SWFRoot;
 	public static var instances = new Map<String, SWF> ();
 	public static var parseABC:Bool = false;
@@ -36,14 +39,17 @@ class SWF extends EventDispatcher {
 	public var width (default, null):Int;
 	
 	private var complete:Bool;
+	private var cachePath:String;
+
 	
-	
-	public function new (bytes:ByteArray) {
+	public function new (bytes:ByteArray, cachePath:String = null) {
 		
 		super ();
+
+		this.cachePath = cachePath;
 		
 		//SWFTimelineContainer.AUTOBUILD_LAYERS = true;
-		data = new SWFRoot (bytes);
+		data = new SWFRoot (this, bytes);
 		
 		backgroundColor = data.backgroundColor;
 		frameRate = data.frameRate;
@@ -135,7 +141,9 @@ class SWF extends EventDispatcher {
 	
 	
 	public function createMovieClip (className:String = ""):MovieClip {
-		
+
+		trace("CREATING MOVIECLIP " + className);
+		var t = Timer.stamp();
 		var symbol:Dynamic = null;
 		var charId:Int;
 		if (className == "") {
@@ -157,10 +165,13 @@ class SWF extends EventDispatcher {
 			}
 			
 		}
+
 		
 		if (Std.is (symbol, SWFTimelineContainer)) {
-			
-			return new MovieClip (cast symbol);
+
+			var m = new MovieClip (cast symbol);
+			trace("MOVIECLIP " + className + " TOOK = " + Math.max(Timer.stamp() - t, 0.0001));
+			return m;
 			
 		}
 		
@@ -170,7 +181,11 @@ class SWF extends EventDispatcher {
 	
 	
 	public function getBitmapData (className:String):BitmapData {
-		
+
+		var t = Timer.stamp();
+
+
+
 		var symbol:Dynamic = null;
 		
 		if (className == "") {
@@ -189,13 +204,33 @@ class SWF extends EventDispatcher {
 		
 		if (Std.is (symbol, TagDefineBits) || Std.is (symbol, TagDefineBitsLossless)) {
 			
-			return new Bitmap (cast symbol).bitmapData;
+			var b = new Bitmap (data, cast symbol).bitmapData;
+			return b;
 			
 		}
 		
 		return null;
 		
 	}
+
+
+	public function getCachedBitmapData(id:Int):BitmapData
+	{
+		if(cachePath == null) return null;
+
+		//try get it from cache first
+		var path = cachePath + id + ".png";
+
+		if(Assets.exists(path)) {
+
+			return Assets.getBitmapData(path, false);
+
+		}
+
+		return null;
+	}
+
+
 	
 	
 	public function hasSymbol (className:String):Bool {

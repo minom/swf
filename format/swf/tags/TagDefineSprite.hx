@@ -22,9 +22,9 @@ class TagDefineSprite extends SWFTimelineContainer #if !haxe3 , #end implements 
 	
 	public var characterId:Int;
 	
-	public function new() {
+	public function new(swf:SWF) {
 		
-		super ();
+		super (swf);
 		
 		type = TYPE;
 		name = "DefineSprite";
@@ -56,7 +56,7 @@ class TagDefineSprite extends SWFTimelineContainer #if !haxe3 , #end implements 
 	}
 	
 	public function clone():IDefinitionTag {
-		var tag:TagDefineSprite = new TagDefineSprite();
+		var tag:TagDefineSprite = new TagDefineSprite(swf);
 		throw(new Error("Not implemented yet."));
 		return tag;
 	}

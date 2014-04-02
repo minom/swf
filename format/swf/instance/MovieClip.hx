@@ -1,6 +1,7 @@
 package format.swf.instance;
 
 
+import haxe.Timer;
 import flash.display.Bitmap;
 import flash.display.BitmapData;
 import flash.display.DisplayObject;
@@ -62,7 +63,8 @@ class MovieClip extends flash.display.MovieClip {
 	private var _scale9ScaleY:Float = 1;
 	
 	public function new (data:SWFTimelineContainer) {
-		
+
+		var t = Timer.stamp();
 		super ();
 		
 		this.data = data;
@@ -73,6 +75,7 @@ class MovieClip extends flash.display.MovieClip {
 			initialized = true;
 			
 		}
+
 		
 		__currentFrame = 1;
 		__totalFrames = data.frames.length;
@@ -386,7 +389,8 @@ class MovieClip extends flash.display.MovieClip {
 	
 	
 	private inline function renderFrame (index:Int):Void {
-		
+
+
 		var frame:Frame = data.frames[index];
 		var sameCharIdList:List<ChildObject>;
 		
@@ -520,8 +524,10 @@ class MovieClip extends flash.display.MovieClip {
 	private inline function getDisplayObject(charId:Int):DisplayObject {
 		
 		var displayObject:DisplayObject = null;
-		
 		var symbol = data.getCharacter (charId);
+
+		var t = Timer.stamp();
+		var debug = false;
 		
 		if (Std.is (symbol, TagDefineSprite)) {
 				
@@ -529,34 +535,44 @@ class MovieClip extends flash.display.MovieClip {
 			var grid = data.getScalingGrid (charId);
 			if (grid != null) {
 				var rect:Rectangle = grid.splitter.rect.clone ();
-				
+
+//				var t2 = Timer.stamp();
 				cast (displayObject, MovieClip).scale9BitmapGrid = rect;
+//				trace("scale9 =  ", Timer.stamp() - t2);
 				
 			}
-			
+			var time = Timer.stamp() - t;
+			if(debug) trace("get MovieClip, " + displayObject.name + "took =  ", time);
+
 		} else if (Std.is (symbol, TagDefineBitsLossless) || Std.is (symbol, TagDefineBits)) {
 			
 			displayObject = new Bitmap (cast symbol);
-			
+			if(debug) trace("get Bitmap took =  ", Timer.stamp() - t);
+
 		} else if (Std.is (symbol, TagDefineShape)) {
 			
 			displayObject = new Shape (data, cast symbol);
-			
+			if(debug) trace("get Shape"+ displayObject.name +" took =  ", Timer.stamp() - t);
+
 		} else if (Std.is (symbol, TagDefineText)) {
 			
 			displayObject = new StaticText (data, cast symbol);
+			if(debug) trace("get StaticText took =  ", Timer.stamp() - t);
 			
 		} else if (Std.is (symbol, TagDefineEditText)) {
 			
 			displayObject = new DynamicText (data, cast symbol);
+			if(debug) trace("get DynamicText took =  ", Timer.stamp() - t);
 			
 		} else if (Std.is (symbol, TagDefineButton2)) {
 			
 			displayObject = new SimpleButton(data, cast symbol);
+			if(debug) trace("get SimpleButton took =  ", Timer.stamp() - t);
 			
 		} else if (Std.is (symbol, TagDefineMorphShape)) {
 			
 			displayObject = new MorphShape(data, cast symbol);
+			if(debug) trace("get MorphShape took =  ", Timer.stamp() - t);
 			
 		} else {
 			
@@ -619,7 +635,38 @@ class MovieClip extends flash.display.MovieClip {
 		lastUpdate = __currentFrame;
 		
 	}
-	
+
+//
+//	private function renderScale9():Void
+//	{
+//		var buckets = [];
+//		var cols = [0, scale9Rect.left, scale9Rect.right, bitmap.width];
+//		var rows = [0, scale9Rect.top, scale9Rect.bottom, bitmap.height];
+//		var outerWidth = bitmap.width - (cols[2] - cols[1]);
+//		var outerHeight = bitmap.height - (rows[2] - rows[1]);
+//		var innerScaleX = (drawWidth - outerWidth) / (bitmap.width - outerWidth);
+//		var innerScaleY = (drawHeight - outerHeight) / (bitmap.height - outerHeight);
+//		var scaleX = drawWidth / bitmap.width;
+//		var scaleY = drawHeight / bitmap.height;
+//		var dx = offset.x * scaleX;
+//		var dy = offset.y * scaleY;
+//		var w = 0.0;
+//		var h = 0.0;
+//
+//
+//
+//		for (i in 0...numChildren) {
+//			var child = getChildAt(0);
+//			var bounds = getBounds(child);
+//			var shouldScaleX = bounds.left < col[2] && bounds.right > col[1];
+//			var shouldScaleY = bounds.top < row[2] && bounds.bottom > rows[1];
+//
+//			if(shouldScaleX) {
+//				child.scaleX *= innerScaleX;
+//			}
+//			if(shouldScaleY) child.scaleY *= innerScaleX;
+//		}
+//	}
 	
 	
 	private inline function drawScale9BitmapData():Void {

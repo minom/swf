@@ -86,7 +86,7 @@ class SimpleButton extends flash.display.SimpleButton {
 			
 		} else if (Std.is (symbol, TagDefineBitsLossless) || Std.is (symbol, TagDefineBits)) {
 			
-			displayObject = new Bitmap (cast symbol);
+			displayObject = new Bitmap (data, cast symbol);
 			
 		} else if (Std.is (symbol, TagDefineShape)) {
 			

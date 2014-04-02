@@ -81,7 +81,7 @@ class SWFLiteExporter {
 	
 	private function addBitmap (tag:IDefinitionTag):BitmapSymbol {
 		
-		var bitmap = new Bitmap (tag);
+		var bitmap = new Bitmap (data, tag);
 		
 		if (bitmap.bitmapData != null) {
 			

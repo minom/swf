@@ -23,7 +23,9 @@ class Shape extends flash.display.Shape {
 				
 				switch (command.type) {
 					
-					case BEGIN_FILL: graphics.beginFill (command.params[0], command.params[1]);
+					case BEGIN_FILL:
+						graphics.beginFill (command.params[0], command.params[1]);
+
 					case BEGIN_GRADIENT_FILL: 
 						
 						cacheAsBitmap = true;
@@ -31,13 +33,14 @@ class Shape extends flash.display.Shape {
 					
 					case BEGIN_BITMAP_FILL: 
 						
-						var bitmap = new Bitmap (cast data.getCharacter (command.params[0]));
+						var bitmap = new Bitmap (data, cast data.getCharacter (command.params[0]));
 						
 						if (bitmap.bitmapData != null) {
 							
 							graphics.beginBitmapFill (bitmap.bitmapData, command.params[1], command.params[2], command.params[3]);
 							
 						}
+
 						
 					case END_FILL: graphics.endFill ();
 					case LINE_STYLE: 
@@ -51,7 +54,7 @@ class Shape extends flash.display.Shape {
 							graphics.lineStyle ();
 							
 						}
-					
+
 					case MOVE_TO: graphics.moveTo (command.params[0], command.params[1]);
 					case LINE_TO: graphics.lineTo (command.params[0], command.params[1]);
 					case CURVE_TO: 

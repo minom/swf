@@ -90,7 +90,8 @@ class SWFTimelineContainer extends SWFEventDispatcher
 	public var tagFactory:ISWFTagFactory;
 
 	private var rootTimelineContainer:SWFTimelineContainer;
-	
+
+	public var swf:SWF;
 	public var backgroundColor:Int;
 	public var jpegTablesTag:TagJPEGTables;
 
@@ -99,12 +100,13 @@ class SWFTimelineContainer extends SWFEventDispatcher
 	public var abcClasses(default, null):Map<Int, ClassDef>;
 	
 	
-	public function new()
+	public function new(swf:SWF)
 	{
 		super();
-		
+
+		this.swf = swf;
 		if (scalingGrids == null) scalingGrids = new Map<Int, Int>();
-		
+
 		backgroundColor = 0xffffff;
 		tags = new Array<ITag>();
 		tagsRaw = new Array<SWFRawTag>();
@@ -113,7 +115,7 @@ class SWFTimelineContainer extends SWFEventDispatcher
 		frames = new Array<Frame>();
 		layers = new Array<Layer>();
 	
-		tagFactory = new SWFTagFactory();
+		tagFactory = new SWFTagFactory(swf);
 		
 		rootTimelineContainer = this;
 		
