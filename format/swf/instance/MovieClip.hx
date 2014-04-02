@@ -40,7 +40,7 @@ class MovieClip extends flash.display.MovieClip {
 	private static var clips:Array <MovieClip>;
 	private static var initialized:Bool;
 	
-	private var data:SWFTimelineContainer;
+	private var data:TagDefineSprite;
 	private var lastUpdate:Int;
 	private var playing:Bool;
 	
@@ -62,7 +62,7 @@ class MovieClip extends flash.display.MovieClip {
 	private var _scale9ScaleX:Float = 1;
 	private var _scale9ScaleY:Float = 1;
 	
-	public function new (data:SWFTimelineContainer) {
+	public function new (data:TagDefineSprite) {
 
 		var t = Timer.stamp();
 		super ();
@@ -130,48 +130,50 @@ class MovieClip extends flash.display.MovieClip {
 	}
 	
 	
-	public /*override*/ function flatten ():Void {
+	public /*override*/ function flatten ():BitmapData {
 		
 		var bounds = getBounds (this);
-		var bitmapData = null;
-		
+		var bitmapData = data.swf.getCachedBitmapData(data.characterId);
+
+		//load from the cache first
+		if(bitmapData != null) {
+
+			return bitmapData;
+
+		}
+
+		//draw it
 		if (bounds.width > 0 && bounds.height > 0) {
 			
-			bitmapData = new BitmapData (Std.int (bounds.width), Std.int (bounds.height), true, 0x00000000);
+			bitmapData = new BitmapData (Math.ceil (bounds.width), Math.ceil (bounds.height), true, 0x00000000);
 			var matrix = new Matrix ();
 			matrix.translate (-bounds.left, -bounds.top);
 			bitmapData.draw (this, matrix);
-			
 		}
+
+
+		return bitmapData;
 		
+	}
+
+
+	private function removeAllChildren():Void {
+
 		for (i in 0...numChildren) {
-			
+
 			var child = getChildAt (0);
-			
+
 			if (Std.is (child, MovieClip)) {
-				
+
 				untyped child.stop ();
-				
+
 			}
-			
+
 			removeChildAt (0);
-			
+
 		}
-		
-		if (bounds.width > 0 && bounds.height > 0) {
-			
-			var bitmap = new flash.display.Bitmap (bitmapData);
-			bitmap.smoothing = true;
-			bitmap.x = bounds.left;
-			bitmap.y = bounds.top;
-			addChild (bitmap);
-			
-		}
-		
-		
-		
+
 		stop();
-		
 	}
 	
 	
@@ -530,7 +532,7 @@ class MovieClip extends flash.display.MovieClip {
 		var debug = false;
 		
 		if (Std.is (symbol, TagDefineSprite)) {
-				
+
 			displayObject = new MovieClip (cast symbol);
 			var grid = data.getScalingGrid (charId);
 			if (grid != null) {
@@ -539,7 +541,7 @@ class MovieClip extends flash.display.MovieClip {
 //				var t2 = Timer.stamp();
 				cast (displayObject, MovieClip).scale9BitmapGrid = rect;
 //				trace("scale9 =  ", Timer.stamp() - t2);
-				
+
 			}
 			var time = Timer.stamp() - t;
 			if(debug) trace("get MovieClip, " + displayObject.name + "took =  ", time);
@@ -635,38 +637,6 @@ class MovieClip extends flash.display.MovieClip {
 		lastUpdate = __currentFrame;
 		
 	}
-
-//
-//	private function renderScale9():Void
-//	{
-//		var buckets = [];
-//		var cols = [0, scale9Rect.left, scale9Rect.right, bitmap.width];
-//		var rows = [0, scale9Rect.top, scale9Rect.bottom, bitmap.height];
-//		var outerWidth = bitmap.width - (cols[2] - cols[1]);
-//		var outerHeight = bitmap.height - (rows[2] - rows[1]);
-//		var innerScaleX = (drawWidth - outerWidth) / (bitmap.width - outerWidth);
-//		var innerScaleY = (drawHeight - outerHeight) / (bitmap.height - outerHeight);
-//		var scaleX = drawWidth / bitmap.width;
-//		var scaleY = drawHeight / bitmap.height;
-//		var dx = offset.x * scaleX;
-//		var dy = offset.y * scaleY;
-//		var w = 0.0;
-//		var h = 0.0;
-//
-//
-//
-//		for (i in 0...numChildren) {
-//			var child = getChildAt(0);
-//			var bounds = getBounds(child);
-//			var shouldScaleX = bounds.left < col[2] && bounds.right > col[1];
-//			var shouldScaleY = bounds.top < row[2] && bounds.bottom > rows[1];
-//
-//			if(shouldScaleX) {
-//				child.scaleX *= innerScaleX;
-//			}
-//			if(shouldScaleY) child.scaleY *= innerScaleX;
-//		}
-//	}
 	
 	
 	private inline function drawScale9BitmapData():Void {
@@ -676,7 +646,6 @@ class MovieClip extends flash.display.MovieClip {
 				drawScale9Bitmap(_scale9BitmapData, _scale9BitmapData.width * _scale9ScaleX, _scale9BitmapData.height * _scale9ScaleY, _scale9BitmapGrid, _scale9Offset);
 
 		}
-
 	}
 
 
@@ -831,16 +800,13 @@ class MovieClip extends flash.display.MovieClip {
 		
 		_scale9BitmapGrid = value;
 		if (_scale9BitmapGrid != null) { 
-			
-			flatten();
-			
-			var bmp:flash.display.Bitmap = cast(getChildAt(0), flash.display.Bitmap);
-			
-			_scale9BitmapData = bmp.bitmapData;
-			_scale9Offset = new Point(bmp.x, bmp.y);
+
+			var offset = getBounds (this);
+			_scale9Offset = new Point(offset.x, offset.y);
+			_scale9BitmapData = flatten();
+			removeAllChildren();
 			drawScale9BitmapData();
-			removeChild(bmp);
-			
+
 		} else {
 			unflatten();
 		}

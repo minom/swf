@@ -1,6 +1,7 @@
 package;
 
 
+import flash.display.BitmapData;
 import flash.utils.ByteArray;
 import format.swf.exporters.SWFBitmapExporter;
 import format.swf.exporters.SWFLiteExporter;
@@ -202,14 +203,16 @@ class Tools {
 			if (type == "swf" && project.target != Platform.HTML5) {
 
 				//here, we are finding and caching all the bitmaps in the swf
-				var bytes = ByteArray.readFile (library.sourcePath);
 				var cachePath = "libraries/" + library.name + "/bin/";
+
+				var bytes = ByteArray.readFile (library.sourcePath);
 				var swf = new SWF (bytes, cachePath);
-				var exporter = new SWFBitmapExporter(swf.data);
+				var bitmapExporter = new SWFBitmapExporter(swf.data);
 
-				for (id in exporter.bitmaps.keys ()) {
+				//cache all bitmaps to disk
+				for (id in bitmapExporter.bitmaps.keys ()) {
 
-					var bitmapData = exporter.bitmaps.get (id);
+					var bitmapData = bitmapExporter.bitmaps.get (id);
 					var bitmap = new Asset ("", cachePath + id + ".png", AssetType.IMAGE);
 					bitmap.data = StringHelper.base64Encode (bitmapData.encode ("png"));
 					bitmap.encoding = AssetEncoding.BASE64;

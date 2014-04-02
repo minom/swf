@@ -34,7 +34,7 @@ class Bitmap extends flash.display.Bitmap {
 
 		} else if (Std.is (tag, TagDefineBitsLossless)) {
 
-			
+			trace("lossless");
 			var data:TagDefineBitsLossless = cast tag;
 			
 			if (data.instance != null) {
@@ -145,6 +145,8 @@ class Bitmap extends flash.display.Bitmap {
 			}
 			
 		} else if (Std.is (tag, TagDefineBitsJPEG2)) {
+
+			trace("jpeg2");
 			
 			var data:TagDefineBitsJPEG2 = cast tag;
 			
@@ -158,6 +160,8 @@ class Bitmap extends flash.display.Bitmap {
 				
 				if (Std.is (tag, TagDefineBitsJPEG3)) {
 
+					trace("jpeg3");
+
 					var alpha = cast (tag, TagDefineBitsJPEG3).bitmapAlphaData;
 					alpha.uncompress ();
 
@@ -166,6 +170,7 @@ class Bitmap extends flash.display.Bitmap {
 					var t2 = Timer.stamp();
 					bitmapData.unmultiplyAlpha ();
 					trace("unmultiply ", Timer.stamp() - t2);
+
 //					bitmapData.setAlphaMode (1);
 
 				} else {
@@ -181,7 +186,8 @@ class Bitmap extends flash.display.Bitmap {
 			}
 			
 		} else if (Std.is (tag, TagDefineBits)) {
-			
+
+			trace("bits");
 			var data:TagDefineBits = cast tag;
 			
 			#if flash

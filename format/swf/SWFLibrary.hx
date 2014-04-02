@@ -81,7 +81,7 @@ import openfl.Assets;
 		var path = cachePath + id + ".png";
 		if(Assets.exists(path)) {
 
-			return Assets.getBitmapData(path);
+			return Assets.getBitmapData(path, false);
 
 		}
 
