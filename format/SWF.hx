@@ -142,8 +142,6 @@ class SWF extends EventDispatcher {
 	
 	public function createMovieClip (className:String = ""):MovieClip {
 
-		trace("CREATING MOVIECLIP " + className);
-		var t = Timer.stamp();
 		var symbol:Dynamic = null;
 		var charId:Int;
 		if (className == "") {
@@ -169,9 +167,7 @@ class SWF extends EventDispatcher {
 		
 		if (Std.is (symbol, SWFTimelineContainer)) {
 
-			var m = new MovieClip (cast symbol);
-			trace("MOVIECLIP " + className + " TOOK = " + Math.max(Timer.stamp() - t, 0.0001));
-			return m;
+			return new MovieClip (cast symbol);
 			
 		}
 		
@@ -181,10 +177,6 @@ class SWF extends EventDispatcher {
 	
 	
 	public function getBitmapData (className:String):BitmapData {
-
-		var t = Timer.stamp();
-
-
 
 		var symbol:Dynamic = null;
 		
@@ -223,7 +215,7 @@ class SWF extends EventDispatcher {
 
 		if(Assets.exists(path)) {
 
-			return Assets.getBitmapData(path, false);
+			return Assets.getBitmapData(path, true);
 
 		}
 

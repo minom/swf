@@ -1,6 +1,10 @@
 package format.swf.instance;
 
 
+import Math;
+import Math;
+import format.swf.tags.TagPlaceObject3;
+import haxe.CallStack;
 import haxe.Timer;
 import flash.display.Bitmap;
 import flash.display.BitmapData;
@@ -61,13 +65,14 @@ class MovieClip extends flash.display.MovieClip {
 	private var _scale9Offset:Point;
 	private var _scale9ScaleX:Float = 1;
 	private var _scale9ScaleY:Float = 1;
-	
-	public function new (data:TagDefineSprite) {
 
-		var t = Timer.stamp();
+	public function new (data:TagDefineSprite, scale9:Rectangle = null) {
+
 		super ();
 		
 		this.data = data;
+
+
 		
 		if (!initialized) {
 			
@@ -87,13 +92,21 @@ class MovieClip extends flash.display.MovieClip {
 
 		}
 		#end*/
+
+
 		
 		objectPool = new Map<Int, List<ChildObject>>();
 		activeObjects = [];
+
+		var grid = data.getScalingGrid(data.characterId);
+		var rect = null;
+		if(grid != null) {
+			rect = grid.splitter.rect.clone();
+		}
 		
 		// TODO: Set ABCData here if needed
-		
-		update ();
+
+		scale9BitmapGrid = rect;
 		
 		if (__totalFrames > 1) {
 			
@@ -101,6 +114,27 @@ class MovieClip extends flash.display.MovieClip {
 			
 		}
 		
+	}
+
+	private inline function getOffset():Point
+	{
+		var offset = new Point();
+		offset.x = Math.POSITIVE_INFINITY;
+		offset.y = Math.POSITIVE_INFINITY;
+
+		for(frame in data.frames){
+			for (object in frame.objects) {
+				var s = data.getCharacter (object.characterId);
+				if(Std.is(s, TagDefineShape)) {
+					var shape:TagDefineShape = cast s;
+					var rect = shape.shapeBounds.rect;
+					offset.x = Math.min(rect.x, offset.x);
+					offset.y = Math.min(rect.y, offset.y);
+				}
+			}
+		}
+
+		return offset;
 	}
 	
 	
@@ -131,8 +165,7 @@ class MovieClip extends flash.display.MovieClip {
 	
 	
 	public /*override*/ function flatten ():BitmapData {
-		
-		var bounds = getBounds (this);
+
 		var bitmapData = data.swf.getCachedBitmapData(data.characterId);
 
 		//load from the cache first
@@ -142,8 +175,11 @@ class MovieClip extends flash.display.MovieClip {
 
 		}
 
+		update();
+		var bounds = getBounds (this);
+
 		//draw it
-		if (bounds.width > 0 && bounds.height > 0) {
+		if (bounds != null && bounds.width > 0 && bounds.height > 0) {
 			
 			bitmapData = new BitmapData (Math.ceil (bounds.width), Math.ceil (bounds.height), true, 0x00000000);
 			var matrix = new Matrix ();
@@ -272,7 +308,7 @@ class MovieClip extends flash.display.MovieClip {
 				matrix = offset;
 				
 			}
-			
+
 			displayObject.transform.matrix = matrix;
 			
 		} else if (firstTag.hasMatrix) {
@@ -288,7 +324,8 @@ class MovieClip extends flash.display.MovieClip {
 				matrix = offset;
 				
 			}
-			
+
+
 			displayObject.transform.matrix = matrix;
 			
 		}
@@ -528,54 +565,45 @@ class MovieClip extends flash.display.MovieClip {
 		var displayObject:DisplayObject = null;
 		var symbol = data.getCharacter (charId);
 
-		var t = Timer.stamp();
-		var debug = false;
-		
+
 		if (Std.is (symbol, TagDefineSprite)) {
 
-			displayObject = new MovieClip (cast symbol);
 			var grid = data.getScalingGrid (charId);
+			var rect = null;
+
 			if (grid != null) {
+
 				var rect:Rectangle = grid.splitter.rect.clone ();
 
-//				var t2 = Timer.stamp();
-				cast (displayObject, MovieClip).scale9BitmapGrid = rect;
-//				trace("scale9 =  ", Timer.stamp() - t2);
-
 			}
-			var time = Timer.stamp() - t;
-			if(debug) trace("get MovieClip, " + displayObject.name + "took =  ", time);
+
+			displayObject = new MovieClip (cast symbol, rect);
+
 
 		} else if (Std.is (symbol, TagDefineBitsLossless) || Std.is (symbol, TagDefineBits)) {
 			
 			displayObject = new Bitmap (cast symbol);
-			if(debug) trace("get Bitmap took =  ", Timer.stamp() - t);
 
 		} else if (Std.is (symbol, TagDefineShape)) {
 			
 			displayObject = new Shape (data, cast symbol);
-			if(debug) trace("get Shape"+ displayObject.name +" took =  ", Timer.stamp() - t);
 
 		} else if (Std.is (symbol, TagDefineText)) {
 			
 			displayObject = new StaticText (data, cast symbol);
-			if(debug) trace("get StaticText took =  ", Timer.stamp() - t);
-			
+
 		} else if (Std.is (symbol, TagDefineEditText)) {
 			
 			displayObject = new DynamicText (data, cast symbol);
-			if(debug) trace("get DynamicText took =  ", Timer.stamp() - t);
-			
+
 		} else if (Std.is (symbol, TagDefineButton2)) {
 			
 			displayObject = new SimpleButton(data, cast symbol);
-			if(debug) trace("get SimpleButton took =  ", Timer.stamp() - t);
-			
+
 		} else if (Std.is (symbol, TagDefineMorphShape)) {
 			
 			displayObject = new MorphShape(data, cast symbol);
-			if(debug) trace("get MorphShape took =  ", Timer.stamp() - t);
-			
+
 		} else {
 			
 			//trace("Warning: No SWF Support for " + Type.getClassName(Type.getClass(symbol)));
@@ -609,7 +637,10 @@ class MovieClip extends flash.display.MovieClip {
 	
 	
 	private function update ():Void {
-		
+
+		if(_scale9BitmapGrid != null) return;
+
+
 		if (__currentFrame != lastUpdate) {
 			
 			var frameIndex = __currentFrame - 1;
@@ -633,6 +664,7 @@ class MovieClip extends flash.display.MovieClip {
 			#end
 			
 		}
+
 		
 		lastUpdate = __currentFrame;
 		
@@ -640,6 +672,8 @@ class MovieClip extends flash.display.MovieClip {
 	
 	
 	private inline function drawScale9BitmapData():Void {
+
+		update();
 
 		if (_scale9BitmapData != null) {
 
@@ -796,19 +830,22 @@ class MovieClip extends flash.display.MovieClip {
 	private function get_scale9BitmapGrid():Rectangle {
 		return _scale9BitmapGrid;
 	}
-	private function set_scale9BitmapGrid(value:Rectangle):Rectangle {
-		
-		_scale9BitmapGrid = value;
-		if (_scale9BitmapGrid != null) { 
 
-			var offset = getBounds (this);
-			_scale9Offset = new Point(offset.x, offset.y);
+	private function set_scale9BitmapGrid(value:Rectangle):Rectangle {
+
+		if (value != null) {
+
+			_scale9Offset = getOffset();
 			_scale9BitmapData = flatten();
+			_scale9BitmapGrid = value;
 			removeAllChildren();
 			drawScale9BitmapData();
 
 		} else {
+
+			_scale9BitmapGrid = value;
 			unflatten();
+
 		}
 		
 		return value;
@@ -816,10 +853,7 @@ class MovieClip extends flash.display.MovieClip {
 	
 	
 	// Event Handlers
-	
-	
-	
-	
+
 	private static function stage_onEnterFrame (event:Event):Void {
 		
 		for (clip in clips) {

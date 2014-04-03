@@ -1,4 +1,4 @@
-﻿package format.swf.tags;
+package format.swf.tags;
 
 import format.swf.SWFData;
 import format.swf.data.SWFRectangle;

@@ -202,13 +202,16 @@ class Tools {
 			
 			if (type == "swf" && project.target != Platform.HTML5) {
 
+
+
 				//here, we are finding and caching all the bitmaps in the swf
 				var cachePath = "libraries/" + library.name + "/bin/";
 
 				var bytes = ByteArray.readFile (library.sourcePath);
 				var swf = new SWF (bytes, cachePath);
-				var bitmapExporter = new SWFBitmapExporter(swf.data);
 
+
+				var bitmapExporter = new SWFBitmapExporter(swf.data);
 				//cache all bitmaps to disk
 				for (id in bitmapExporter.bitmaps.keys ()) {
 
@@ -219,6 +222,7 @@ class Tools {
 					output.assets.push (bitmap);
 
 				}
+
 
 				//add the swf to the asset path
 				var swfAsset = new Asset (library.sourcePath, "libraries/" + library.name + ".swf", AssetType.BINARY);

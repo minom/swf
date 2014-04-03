@@ -1,4 +1,4 @@
-﻿package format.swf.data;
+package format.swf.data;
 
 import format.swf.SWFData;
 import format.swf.utils.NumberUtils;

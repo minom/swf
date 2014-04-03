@@ -21,20 +21,17 @@ class Bitmap extends flash.display.Bitmap {
 		
 		super ();
 
-		var t = Timer.stamp();
 
 		//try get it from cache first
 
 		var cached = data.swf.getCachedBitmapData(tag.characterId);
-		trace("CREATING BITMAP, cached is = ", cached);
 		if( cached != null) {
 
-			trace("cache worked");
 			bitmapData = cached;
 
 		} else if (Std.is (tag, TagDefineBitsLossless)) {
 
-			trace("lossless");
+			
 			var data:TagDefineBitsLossless = cast tag;
 			
 			if (data.instance != null) {
@@ -128,25 +125,20 @@ class Bitmap extends flash.display.Bitmap {
 					#end
 					
 				}
-				
+
 				bitmapData = new BitmapData (data.bitmapWidth, data.bitmapHeight, transparent);
 				bitmapData.setPixels (bitmapData.rect, buffer);
 
-
-				var t2 = Timer.stamp();
 				#if (cpp || neko)
 				bitmapData.unmultiplyAlpha ();
 				//bitmapData.setAlphaMode (1);
 				#end
-				trace("unmultiply ", Timer.stamp() - t2);
-				
+
 				data.instance = bitmapData;
 				
 			}
 			
 		} else if (Std.is (tag, TagDefineBitsJPEG2)) {
-
-			trace("jpeg2");
 			
 			var data:TagDefineBitsJPEG2 = cast tag;
 			
@@ -160,17 +152,12 @@ class Bitmap extends flash.display.Bitmap {
 				
 				if (Std.is (tag, TagDefineBitsJPEG3)) {
 
-					trace("jpeg3");
-
 					var alpha = cast (tag, TagDefineBitsJPEG3).bitmapAlphaData;
 					alpha.uncompress ();
 
 					bitmapData = BitmapData.loadFromBytes (data.bitmapData, alpha);
 
-					var t2 = Timer.stamp();
 					bitmapData.unmultiplyAlpha ();
-					trace("unmultiply ", Timer.stamp() - t2);
-
 //					bitmapData.setAlphaMode (1);
 
 				} else {
@@ -187,7 +174,7 @@ class Bitmap extends flash.display.Bitmap {
 			
 		} else if (Std.is (tag, TagDefineBits)) {
 
-			trace("bits");
+			
 			var data:TagDefineBits = cast tag;
 			
 			#if flash
@@ -204,8 +191,7 @@ class Bitmap extends flash.display.Bitmap {
 
 		}
 
-		trace("Creating Bitmap " + name + " took: " +  Math.max(Timer.stamp() - t, 0.0001));
-		
+
 		// TODO: Is there a way to catch "allow smoothing" from Flash?
 		
 		//smoothing = true;

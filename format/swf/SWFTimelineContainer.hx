@@ -1,5 +1,7 @@
 package format.swf;
 
+import Type;
+import format.swf.tags.TagDefineScalingGrid;
 import format.abc.Data.ABCData;
 import format.abc.Data.ClassDef;
 import format.abc.Data.Field;
@@ -64,8 +66,9 @@ class SWFTimelineContainer extends SWFEventDispatcher
 	public static var TIMEOUT:Int = 50;
 	public static var AUTOBUILD_LAYERS:Bool = false;
 	public static var EXTRACT_SOUND_STREAM:Bool = true;
-	public static var scalingGrids(default, null):Map<Int, Int>;
-	
+
+	public static var scalingGrids(default, null):Map<Int, TagDefineScalingGrid>;
+
 	public var tags(default, null):Array<ITag>;
 	public var tagsRaw(default, null):Array<SWFRawTag>;
 	public var dictionary(default, null):Map<Int, Int>;
@@ -105,8 +108,7 @@ class SWFTimelineContainer extends SWFEventDispatcher
 		super();
 
 		this.swf = swf;
-		if (scalingGrids == null) scalingGrids = new Map<Int, Int>();
-
+		if(scalingGrids == null) scalingGrids = new Map();
 		backgroundColor = 0xffffff;
 		tags = new Array<ITag>();
 		tagsRaw = new Array<SWFRawTag>();
@@ -133,13 +135,8 @@ class SWFTimelineContainer extends SWFEventDispatcher
 	}
 	
 	public function getScalingGrid(characterId:Int):TagDefineScalingGrid {
-		//trace(characterId  + " getScalingGrid" );
-		//trace(scalingGrids);
-		
-		if (scalingGrids.exists (characterId)) {
-			return cast rootTimelineContainer.tags[scalingGrids.get (characterId)];
-		}
-		return null;
+
+		return scalingGrids.exists (characterId) ? scalingGrids.get(characterId) : null;
 	}
 	
 	public function parseTags(data:SWFData, version:Int):Void {
@@ -341,7 +338,7 @@ class SWFTimelineContainer extends SWFEventDispatcher
 				processJPEGTablesTag(cast tag, currentTagIndex);
 			// Scale-9 grids
 			case TagDefineScalingGrid.TYPE:
-				processScalingGridTag(cast tag, currentTagIndex);
+				processScalingGridTag(cast tag);
 			// Actionscript 3
 			case TagDoABC.TYPE:
 				if (SWF.parseABC) processAS3Tag(cast tag, currentTagIndex);
@@ -444,11 +441,11 @@ class SWFTimelineContainer extends SWFEventDispatcher
 	private function processJPEGTablesTag(tag:TagJPEGTables, currentTagIndex:Int):Void {
 		jpegTablesTag = tag;
 	}
-	
-	private function processScalingGridTag(tag:TagDefineScalingGrid, currentTagIndex:Int):Void {
-		scalingGrids.set (tag.characterId, currentTagIndex);
+
+	private function processScalingGridTag(tag:TagDefineScalingGrid):Void {
+		scalingGrids.set (tag.characterId, tag);
 	}
-	
+
 	private function processAS3Tag(tag:TagDoABC, currentTagIndex:Int):Void {
 		// Just store it for now
 		abcTag = tag;
