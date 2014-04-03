@@ -3,6 +3,12 @@ package format.swf.instance;
 
 import Math;
 import Math;
+import Math;
+import Math;
+import Math;
+import Math;
+import Math;
+import Math;
 import format.swf.tags.TagPlaceObject3;
 import haxe.CallStack;
 import haxe.Timer;
@@ -41,7 +47,7 @@ typedef ChildObject = {
 
 class MovieClip extends flash.display.MovieClip {
 	
-	private static inline var FLATTEN_MARGIN:Float = 3;
+	private static inline var FLATTEN_MARGIN:Float = 1;
 	private static var clips:Array <MovieClip>;
 	private static var initialized:Bool;
 	
@@ -123,13 +129,12 @@ class MovieClip extends flash.display.MovieClip {
 
 		update();
 
-		var margin = FLATTEN_MARGIN;
+		var margin = FLATTEN_MARGIN*2;
 		var bounds = getBounds(this);
-		var offset = getOffset();
-		var width = Math.floor(bounds.width + margin*2);
-		var height = Math.floor(bounds.height + margin*2);
-		var left = offset.x - margin;
-		var top = offset.y - margin;
+		var width = Math.floor(bounds.width);
+		var height = Math.floor(bounds.height);
+		var left = Math.floor(bounds.x - margin/2);
+		var top = Math.floor(bounds.y - margin/2);
 
 		//draw it
 		if (bounds != null && bounds.width > 0 && bounds.height > 0) {
@@ -137,10 +142,10 @@ class MovieClip extends flash.display.MovieClip {
 			bitmapData = new BitmapData (width, height, true, 0x00000000);
 			var matrix = new Matrix ();
 			matrix.translate (-left, -top);
-			bitmapData.draw (this, matrix, true);
+			matrix.scale((width-margin)/width, (height-margin)/height); //scale down so it is all rendered
+			bitmapData.draw (this, matrix, false);
 
 		}
-
 
 		return bitmapData;
 
@@ -234,7 +239,6 @@ class MovieClip extends flash.display.MovieClip {
 		if (frame != null) {
 			
 			var frameObject:FrameObject = null;
-			
 			var newActiveObjects:Array<ChildObject> = [];
 			
 			// Check previously active objects (Maintain or remove)
@@ -628,12 +632,13 @@ class MovieClip extends flash.display.MovieClip {
 				}
 
 				//now draw it
-				graphics.beginBitmapFill(bitmap, matrix, false, true);
+				graphics.beginBitmapFill(bitmap, matrix, false, false);
 				graphics.drawRect(Math.floor(dx), Math.floor(dy), Math.ceil(w), Math.ceil(h));
 				graphics.endFill();
 				dx += w;
 
 			}
+
 
 			dx = offset.x * scaleX;
 			dy += h;
@@ -656,8 +661,8 @@ class MovieClip extends flash.display.MovieClip {
 
 					var shape:TagDefineShape = cast s;
 					var rect = shape.shapeBounds.rect;
-					offset.x = Math.min(rect.x, offset.x);
-					offset.y = Math.min(rect.y, offset.y);
+					offset.x = Math.min(Math.floor(rect.x), offset.x);
+					offset.y = Math.min(Math.floor(rect.y), offset.y);
 
 				}
 			}
