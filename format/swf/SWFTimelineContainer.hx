@@ -67,7 +67,6 @@ class SWFTimelineContainer extends SWFEventDispatcher
 	public static var AUTOBUILD_LAYERS:Bool = false;
 	public static var EXTRACT_SOUND_STREAM:Bool = true;
 
-	public static var scalingGrids(default, null):Map<Int, TagDefineScalingGrid>;
 
 	public var tags(default, null):Array<ITag>;
 	public var tagsRaw(default, null):Array<SWFRawTag>;
@@ -108,7 +107,6 @@ class SWFTimelineContainer extends SWFEventDispatcher
 		super();
 
 		this.swf = swf;
-		if(scalingGrids == null) scalingGrids = new Map();
 		backgroundColor = 0xffffff;
 		tags = new Array<ITag>();
 		tagsRaw = new Array<SWFRawTag>();
@@ -136,7 +134,7 @@ class SWFTimelineContainer extends SWFEventDispatcher
 	
 	public function getScalingGrid(characterId:Int):TagDefineScalingGrid {
 
-		return scalingGrids.exists (characterId) ? scalingGrids.get(characterId) : null;
+		return swf.scalingGrids.exists (characterId) ? swf.scalingGrids.get(characterId) : null;
 	}
 	
 	public function parseTags(data:SWFData, version:Int):Void {
@@ -443,7 +441,7 @@ class SWFTimelineContainer extends SWFEventDispatcher
 	}
 
 	private function processScalingGridTag(tag:TagDefineScalingGrid):Void {
-		scalingGrids.set (tag.characterId, tag);
+		swf.scalingGrids.set (tag.characterId, tag);
 	}
 
 	private function processAS3Tag(tag:TagDoABC, currentTagIndex:Int):Void {

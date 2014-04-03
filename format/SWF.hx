@@ -1,6 +1,7 @@
 package format;
 
 
+import format.swf.tags.TagDefineScalingGrid;
 import flash.display.BitmapData;
 import openfl.Assets;
 import haxe.Timer;
@@ -31,13 +32,16 @@ class SWF extends EventDispatcher {
 	public var data:SWFRoot;
 	public static var instances = new Map<String, SWF> ();
 	public static var parseABC:Bool = false;
-	
+
+
+
 	public var backgroundColor (default, null):Int;
 	public var frameRate (default, null):Float;
 	public var height (default, null):Int;
 	public var symbols:Map <String, Int>;
 	public var width (default, null):Int;
-	
+	public var scalingGrids:Map<Int, TagDefineScalingGrid>;
+
 	private var complete:Bool;
 	private var cachePath:String;
 
@@ -47,7 +51,7 @@ class SWF extends EventDispatcher {
 		super ();
 
 		this.cachePath = cachePath;
-		
+		scalingGrids = new Map();
 		//SWFTimelineContainer.AUTOBUILD_LAYERS = true;
 		data = new SWFRoot (this, bytes);
 		

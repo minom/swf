@@ -223,7 +223,6 @@ class Tools {
 
 				}
 
-
 				//add the swf to the asset path
 				var swfAsset = new Asset (library.sourcePath, "libraries/" + library.name + ".swf", AssetType.BINARY);
 

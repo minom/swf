@@ -38,9 +38,10 @@ typedef ChildObject = {
 	var frameObject:FrameObject;
 }
 
+
 class MovieClip extends flash.display.MovieClip {
 	
-	
+	private static inline var FLATTEN_MARGIN:Float = 3;
 	private static var clips:Array <MovieClip>;
 	private static var initialized:Bool;
 	
@@ -59,20 +60,16 @@ class MovieClip extends flash.display.MovieClip {
 	//private var __currentLabels:Array<FrameLabel>;
 	#end
 	
-	public var scale9BitmapGrid(get, set):Rectangle;
-	private var _scale9BitmapGrid:Rectangle;
-	private var _scale9BitmapData:BitmapData;
-	private var _scale9Offset:Point;
+	private var _scale9Grid:Rectangle;
+	private var _flattened:BitmapData;
 	private var _scale9ScaleX:Float = 1;
 	private var _scale9ScaleY:Float = 1;
 
-	public function new (data:TagDefineSprite, scale9:Rectangle = null) {
+	public function new (data:TagDefineSprite) {
 
 		super ();
 		
 		this.data = data;
-
-
 		
 		if (!initialized) {
 			
@@ -80,7 +77,6 @@ class MovieClip extends flash.display.MovieClip {
 			initialized = true;
 			
 		}
-
 		
 		__currentFrame = 1;
 		__totalFrames = data.frames.length;
@@ -93,78 +89,28 @@ class MovieClip extends flash.display.MovieClip {
 		}
 		#end*/
 
-
-		
 		objectPool = new Map<Int, List<ChildObject>>();
 		activeObjects = [];
 
+		//set up scale9
 		var grid = data.getScalingGrid(data.characterId);
-		var rect = null;
 		if(grid != null) {
-			rect = grid.splitter.rect.clone();
+
+			setScale9Grid(grid.splitter.rect.clone());
+
 		}
-		
+
+		//draw the frames
+		update();
+
 		// TODO: Set ABCData here if needed
+		if (__totalFrames > 1) play ();
 
-		scale9BitmapGrid = rect;
-		
-		if (__totalFrames > 1) {
-			
-			play ();
-			
-		}
-		
 	}
 
-	private inline function getOffset():Point
-	{
-		var offset = new Point();
-		offset.x = Math.POSITIVE_INFINITY;
-		offset.y = Math.POSITIVE_INFINITY;
-
-		for(frame in data.frames){
-			for (object in frame.objects) {
-				var s = data.getCharacter (object.characterId);
-				if(Std.is(s, TagDefineShape)) {
-					var shape:TagDefineShape = cast s;
-					var rect = shape.shapeBounds.rect;
-					offset.x = Math.min(rect.x, offset.x);
-					offset.y = Math.min(rect.y, offset.y);
-				}
-			}
-		}
-
-		return offset;
-	}
 	
 	
-	private inline function applyTween (start:Float, end:Float, ratio:Float):Float {
-		
-		return start + ((end - start) * ratio);
-		
-	}
-	
-	
-	private function enterFrame ():Void {
-		
-		if (lastUpdate == __currentFrame) {
-			
-			__currentFrame ++;
-			
-			if (__currentFrame > __totalFrames) {
-				
-				__currentFrame = 1;
-				
-			}
-			
-		}
-		
-		update ();
-		
-	}
-	
-	
-	public /*override*/ function flatten ():BitmapData {
+	public function flatten ():BitmapData {
 
 		var bitmapData = data.swf.getCachedBitmapData(data.characterId);
 
@@ -176,63 +122,31 @@ class MovieClip extends flash.display.MovieClip {
 		}
 
 		update();
-		var bounds = getBounds (this);
+
+		var margin = FLATTEN_MARGIN;
+		var bounds = getBounds(this);
+		var offset = getOffset();
+		var width = Math.floor(bounds.width + margin*2);
+		var height = Math.floor(bounds.height + margin*2);
+		var left = offset.x - margin;
+		var top = offset.y - margin;
 
 		//draw it
 		if (bounds != null && bounds.width > 0 && bounds.height > 0) {
-			
-			bitmapData = new BitmapData (Math.ceil (bounds.width), Math.ceil (bounds.height), true, 0x00000000);
+
+			bitmapData = new BitmapData (width, height, true, 0x00000000);
 			var matrix = new Matrix ();
-			matrix.translate (-bounds.left, -bounds.top);
-			bitmapData.draw (this, matrix);
+			matrix.translate (-left, -top);
+			bitmapData.draw (this, matrix, true);
+
 		}
 
 
 		return bitmapData;
-		
+
 	}
 
 
-	private function removeAllChildren():Void {
-
-		for (i in 0...numChildren) {
-
-			var child = getChildAt (0);
-
-			if (Std.is (child, MovieClip)) {
-
-				untyped child.stop ();
-
-			}
-
-			removeChildAt (0);
-
-		}
-
-		stop();
-	}
-	
-	
-	private function getFrame (frame:Dynamic):Int {
-		
-		var value = 1;
-		
-		if (Std.is (frame, Int)) {
-			
-			value = cast frame;
-			if (value < 1) value = 1;
-			if (value > __totalFrames) value = __totalFrames;
-			
-		} else if (Std.is (frame, String)) {
-			if (data.frameIndexes.exists(cast frame))
-				value = data.frameIndexes.get(cast frame);
-			else
-				value = 1;
-		}
-		
-		return value;
-		
-	}
 	
 	
 	public override function gotoAndPlay (frame:#if flash flash.utils.Object #else Dynamic #end, scene:String = null):Void {
@@ -268,135 +182,6 @@ class MovieClip extends flash.display.MovieClip {
 	}
 	
 	
-	private inline function placeObject (displayObject:DisplayObject, frameObject:FrameObject):Void {
-		
-		var firstTag:TagPlaceObject = cast data.tags [frameObject.placedAtIndex];
-		var lastTag:TagPlaceObject = null;
-		
-		if (frameObject.lastModifiedAtIndex > 0) {
-			
-			lastTag = cast data.tags [frameObject.lastModifiedAtIndex];
-			
-		}
-		
-		if (lastTag != null && lastTag.hasName) {
-			
-			displayObject.name = lastTag.instanceName;
-			
-		} else if (firstTag.hasName) {
-			
-			displayObject.name = firstTag.instanceName;
-			
-		}
-		
-		var oldScaleX:Float = displayObject.scaleX;
-		var oldScaleY:Float = displayObject.scaleY;
-		
-		var sx:Float;
-		var sy:Float;
-		
-		if (lastTag != null && lastTag.hasMatrix) {
-			
-			var matrix = lastTag.matrix.matrix;
-			matrix.tx *= 1 / 20;
-			matrix.ty *= 1 / 20;
-			
-			if (Std.is (displayObject, DynamicText)) {
-				
-				var offset = cast (displayObject, DynamicText).offset.clone ();
-				offset.concat (matrix);
-				matrix = offset;
-				
-			}
-
-			displayObject.transform.matrix = matrix;
-			
-		} else if (firstTag.hasMatrix) {
-			
-			var matrix = firstTag.matrix.matrix;
-			matrix.tx *= 1 / 20;
-			matrix.ty *= 1 / 20;
-			
-			if (Std.is (displayObject, DynamicText)) {
-				
-				var offset = cast (displayObject, DynamicText).offset.clone ();
-				offset.concat (matrix);
-				matrix = offset;
-				
-			}
-
-
-			displayObject.transform.matrix = matrix;
-			
-		}
-		
-		
-		if (Std.is(displayObject, MovieClip)) {
-			var mc = cast(displayObject, MovieClip);
-			if (mc.scale9BitmapGrid != null && (mc.transform.matrix.a != oldScaleX || mc.transform.matrix.d != oldScaleY)) {
-				
-				mc._scale9ScaleX = mc.transform.matrix.a;
-				mc._scale9ScaleY = mc.transform.matrix.d;
-				
-				var mt:Matrix = mc.transform.matrix;
-				
-				mt.a = 1;
-				mt.d = 1;
-				
-				mc.transform.matrix = mt;
-				
-				mc.drawScale9BitmapData();
-			}
-		}
-		
-		
-		
-		if (lastTag != null && lastTag.hasColorTransform) {
-			
-			displayObject.transform.colorTransform = lastTag.colorTransform.colorTransform;
-			
-		} else if (firstTag.hasColorTransform) {
-			
-			displayObject.transform.colorTransform = firstTag.colorTransform.colorTransform;
-			
-		}
-		
-		if (lastTag != null && lastTag.hasFilterList) {
-			
-			var filters = [];
-			
-			for (i in 0...lastTag.surfaceFilterList.length) {
-				
-				filters[i] = lastTag.surfaceFilterList[i].filter;
-				
-			}
-			
-			displayObject.filters = filters;
-			
-		} else if (firstTag.hasFilterList) {
-			
-			var filters = [];
-			
-			for (i in 0...firstTag.surfaceFilterList.length) {
-				
-				filters[i] = firstTag.surfaceFilterList[i].filter;
-				
-			}
-			
-			displayObject.filters = filters;
-			
-		}
-		
-		
-		if (Std.is(displayObject, MorphShape)) {
-			
-			if (lastTag != null) cast(displayObject, MorphShape).render(lastTag.ratio);
-			
-		}
-		
-	}
-	
-	
 	public override function play ():Void {
 		
 		if (!playing && __totalFrames > 1) {
@@ -409,6 +194,20 @@ class MovieClip extends flash.display.MovieClip {
 			
 		}
 		
+	}
+
+
+	public override function stop ():Void {
+
+		if (playing) {
+
+			playing = false;
+			clips.remove (this);
+
+			if (clips.length == 0) Lib.current.stage.removeEventListener (Event.ENTER_FRAME, stage_onEnterFrame);
+
+		}
+
 	}
 	
 	
@@ -425,10 +224,9 @@ class MovieClip extends flash.display.MovieClip {
 		gotoAndStop (previous);
 		
 	}
-	
+
 	
 	private inline function renderFrame (index:Int):Void {
-
 
 		var frame:Frame = data.frames[index];
 		var sameCharIdList:List<ChildObject>;
@@ -553,32 +351,147 @@ class MovieClip extends flash.display.MovieClip {
 					
 					addChild(displayObject);
 				}
-
-				
 			}
 		}
-		
 	}
+
+
+	private inline function placeObject (displayObject:DisplayObject, frameObject:FrameObject):Void {
+
+		var firstTag:TagPlaceObject = cast data.tags [frameObject.placedAtIndex];
+		var lastTag:TagPlaceObject = null;
+
+		if (frameObject.lastModifiedAtIndex > 0) {
+
+			lastTag = cast data.tags [frameObject.lastModifiedAtIndex];
+
+		}
+
+		if (lastTag != null && lastTag.hasName) {
+
+			displayObject.name = lastTag.instanceName;
+
+		} else if (firstTag.hasName) {
+
+			displayObject.name = firstTag.instanceName;
+
+		}
+
+		var oldScaleX:Float = displayObject.scaleX;
+		var oldScaleY:Float = displayObject.scaleY;
+
+		var sx:Float;
+		var sy:Float;
+
+		if (lastTag != null && lastTag.hasMatrix) {
+
+			var matrix = lastTag.matrix.matrix;
+			matrix.tx *= 1 / 20;
+			matrix.ty *= 1 / 20;
+
+			if (Std.is (displayObject, DynamicText)) {
+
+				var offset = cast (displayObject, DynamicText).offset.clone ();
+				offset.concat (matrix);
+				matrix = offset;
+
+			}
+
+			displayObject.transform.matrix = matrix;
+
+		} else if (firstTag.hasMatrix) {
+
+			var matrix = firstTag.matrix.matrix;
+			matrix.tx *= 1 / 20;
+			matrix.ty *= 1 / 20;
+
+			if (Std.is (displayObject, DynamicText)) {
+
+				var offset = cast (displayObject, DynamicText).offset.clone ();
+				offset.concat (matrix);
+				matrix = offset;
+
+			}
+
+
+			displayObject.transform.matrix = matrix;
+
+		}
+
+
+		if (Std.is(displayObject, MovieClip)) {
+			var mc:MovieClip = cast displayObject;
+			if (mc._scale9Grid != null && (mc.transform.matrix.a != oldScaleX || mc.transform.matrix.d != oldScaleY)) {
+
+				mc._scale9ScaleX = mc.transform.matrix.a;
+				mc._scale9ScaleY = mc.transform.matrix.d;
+
+				var mt:Matrix = mc.transform.matrix;
+
+				mt.a = 1;
+				mt.d = 1;
+
+				mc.transform.matrix = mt;
+				mc.drawScale9Grid();
+			}
+		}
+
+
+
+		if (lastTag != null && lastTag.hasColorTransform) {
+
+			displayObject.transform.colorTransform = lastTag.colorTransform.colorTransform;
+
+		} else if (firstTag.hasColorTransform) {
+
+			displayObject.transform.colorTransform = firstTag.colorTransform.colorTransform;
+
+		}
+
+		if (lastTag != null && lastTag.hasFilterList) {
+
+			var filters = [];
+
+			for (i in 0...lastTag.surfaceFilterList.length) {
+
+				filters[i] = lastTag.surfaceFilterList[i].filter;
+
+			}
+
+			displayObject.filters = filters;
+
+		} else if (firstTag.hasFilterList) {
+
+			var filters = [];
+
+			for (i in 0...firstTag.surfaceFilterList.length) {
+
+				filters[i] = firstTag.surfaceFilterList[i].filter;
+
+			}
+
+			displayObject.filters = filters;
+
+		}
+
+
+		if (Std.is(displayObject, MorphShape)) {
+
+			if (lastTag != null) cast(displayObject, MorphShape).render(lastTag.ratio);
+
+		}
+
+	}
+
 	
 	private inline function getDisplayObject(charId:Int):DisplayObject {
 		
 		var displayObject:DisplayObject = null;
 		var symbol = data.getCharacter (charId);
 
-
 		if (Std.is (symbol, TagDefineSprite)) {
 
-			var grid = data.getScalingGrid (charId);
-			var rect = null;
-
-			if (grid != null) {
-
-				var rect:Rectangle = grid.splitter.rect.clone ();
-
-			}
-
-			displayObject = new MovieClip (cast symbol, rect);
-
+			displayObject = new MovieClip (cast symbol);
 
 		} else if (Std.is (symbol, TagDefineBitsLossless) || Std.is (symbol, TagDefineBits)) {
 			
@@ -614,31 +527,9 @@ class MovieClip extends flash.display.MovieClip {
 	}
 	
 	
-	public override function stop ():Void {
-		
-		if (playing) {
-			
-			playing = false;
-			clips.remove (this);
-			
-			if (clips.length == 0) Lib.current.stage.removeEventListener (Event.ENTER_FRAME, stage_onEnterFrame);
-			
-		}
-		
-	}
-	
-	
-	public /*override*/ function unflatten ():Void {
-		
-		lastUpdate = -1;
-		update ();
-		
-	}
-	
-	
 	private function update ():Void {
 
-		if(_scale9BitmapGrid != null) return;
+		if(_scale9Grid != null) return;
 
 
 		if (__currentFrame != lastUpdate) {
@@ -669,25 +560,24 @@ class MovieClip extends flash.display.MovieClip {
 		lastUpdate = __currentFrame;
 		
 	}
-	
-	
-	private inline function drawScale9BitmapData():Void {
-
-		update();
-
-		if (_scale9BitmapData != null) {
-
-				drawScale9Bitmap(_scale9BitmapData, _scale9BitmapData.width * _scale9ScaleX, _scale9BitmapData.height * _scale9ScaleY, _scale9BitmapGrid, _scale9Offset);
-
-		}
-	}
 
 
 
-	private function drawScale9Bitmap(bitmap : BitmapData, drawWidth:Float, drawHeight:Float, scale9Rect:Rectangle, offset:Point):Void {
+	private function drawScale9Grid():Void {
 
-		graphics.clear();
+		if(_flattened == null) return;
 
+		var bitmap = _flattened;
+		var drawWidth = _flattened.width * _scale9ScaleX;
+		var drawHeight = _flattened.height* _scale9ScaleY;
+		var scale9Rect = _scale9Grid;
+		var offset = getOffset();
+
+		//align
+		offset.x += FLATTEN_MARGIN;
+		offset.y += FLATTEN_MARGIN;
+
+		//precompute some helper variables
 		var matrix = new Matrix();
 		var cols = [0, scale9Rect.left, scale9Rect.right, bitmap.width];
 		var rows = [0, scale9Rect.top, scale9Rect.bottom, bitmap.height];
@@ -701,6 +591,9 @@ class MovieClip extends flash.display.MovieClip {
 		var dy = offset.y * scaleY;
 		var w = 0.0;
 		var h = 0.0;
+
+		//clear previous scale9 drawing
+		graphics.clear();
 
 		//loop through and draw each section of the scale9Grid
 		for(row in 0...3) {
@@ -720,7 +613,6 @@ class MovieClip extends flash.display.MovieClip {
 
 					h *= innerScaleY;
 					matrix.translate(0, sourceY - dy); //undo the previous translation
-					matrix.translate(0, offset.y); //start at the offset
 					matrix.scale(1, innerScaleY); //scale it to the right size
 					matrix.translate(0, dy - sourceY * innerScaleY); //move it so that the middle section is being drawn
 
@@ -730,7 +622,6 @@ class MovieClip extends flash.display.MovieClip {
 
 					w *= innerScaleX;
 					matrix.translate(sourceX - dx, 0); //undo the previous translation
-					matrix.translate(offset.x, 0); //start it at the offset
 					matrix.scale(innerScaleX, 1); //scale it to the right size
 					matrix.translate(dx - sourceX * innerScaleX, 0); //move it so that the middle section is being drawn
 
@@ -738,7 +629,7 @@ class MovieClip extends flash.display.MovieClip {
 
 				//now draw it
 				graphics.beginBitmapFill(bitmap, matrix, false, true);
-				graphics.drawRect(dx, dy, w, h);
+				graphics.drawRect(Math.floor(dx), Math.floor(dy), Math.ceil(w), Math.ceil(h));
 				graphics.endFill();
 				dx += w;
 
@@ -748,6 +639,100 @@ class MovieClip extends flash.display.MovieClip {
 			dy += h;
 
 		}
+	}
+
+
+	private inline function getOffset():Point
+	{
+		var offset = new Point();
+		offset.x = Math.POSITIVE_INFINITY;
+		offset.y = Math.POSITIVE_INFINITY;
+
+		for(frame in data.frames){
+			for (object in frame.objects) {
+
+				var s = data.getCharacter (object.characterId);
+				if(Std.is(s, TagDefineShape)) {
+
+					var shape:TagDefineShape = cast s;
+					var rect = shape.shapeBounds.rect;
+					offset.x = Math.min(rect.x, offset.x);
+					offset.y = Math.min(rect.y, offset.y);
+
+				}
+			}
+		}
+
+		return offset;
+	}
+
+
+	private inline function applyTween (start:Float, end:Float, ratio:Float):Float {
+
+		return start + ((end - start) * ratio);
+
+	}
+
+
+	private function enterFrame ():Void {
+
+		if (lastUpdate == __currentFrame) {
+
+			__currentFrame ++;
+
+			if (__currentFrame > __totalFrames) {
+
+				__currentFrame = 1;
+
+			}
+
+		}
+
+		update ();
+
+	}
+
+
+	private function removeAllChildren():Void {
+
+		for (i in 0...numChildren) {
+
+			var child = getChildAt (0);
+
+			if (Std.is (child, MovieClip)) {
+
+				untyped child.stop ();
+
+			}
+
+			removeChildAt (0);
+
+		}
+
+		stop();
+	}
+
+
+	private function getFrame (frame:Dynamic):Int {
+
+		var value = 1;
+
+		if (Std.is (frame, Int)) {
+
+			value = cast frame;
+			if (value < 1) value = 1;
+			if (value > __totalFrames) value = __totalFrames;
+
+		} else if (Std.is (frame, String)) {
+
+			if (data.frameIndexes.exists(cast frame))
+				value = data.frameIndexes.get(cast frame);
+			else
+				value = 1;
+		}
+
+		return value;
+
 	}
 	
 	
@@ -772,34 +757,39 @@ class MovieClip extends flash.display.MovieClip {
 	@:setter(scaleX)
 	#if (!flash) override #end private function set_scaleX(val:Float):#if (!flash) Float #else Void #end
 	{
-		if (_scale9BitmapGrid == null) super.scaleX = val;
+		if (_scale9Grid == null) super.scaleX = val;
 		else {
 			super.scaleX = 1;
 			_scale9ScaleX = val;
-			drawScale9BitmapData();
+			drawScale9Grid();
 		}
 		#if (!flash) return val; #end
 	}
+
+
 	@:getter(scaleX)
 	#if (!flash) override #end private function get_scaleX():Float {
-		if (_scale9BitmapGrid == null) return super.scaleX;
+		if (_scale9Grid == null) return super.scaleX;
 		else return _scale9ScaleX;
 	}
-	
+
+
 	@:setter(scaleY)
 	#if (!flash) override #end private function set_scaleY(val:Float):#if (!flash) Float #else Void #end
 	{
-		if (_scale9BitmapGrid == null) super.scaleY = val;
+		if (_scale9Grid == null) super.scaleY = val;
 		else {
 			super.scaleY = 1;
 			_scale9ScaleY = val;
-			drawScale9BitmapData();
+			drawScale9Grid();
 		}
 		#if (!flash) return val; #end
 	}
+
+
 	@:getter(scaleY)
 	#if (!flash) override #end private function get_scaleY():Float {
-		if (_scale9BitmapGrid == null) return super.scaleY;
+		if (_scale9Grid == null) return super.scaleY;
 		else return _scale9ScaleY;
 	}
 	
@@ -807,48 +797,43 @@ class MovieClip extends flash.display.MovieClip {
 	@:setter(width)
 	#if (!flash) override #end private function set_width(val:Float):#if (!flash) Float #else Void #end
 	{
-		if (_scale9BitmapGrid == null) super.width = val;
+		if (_scale9Grid == null) super.width = val;
 		else {
-			_scale9ScaleX = val / _scale9BitmapData.width;
-			drawScale9BitmapData();
+			_scale9ScaleX = val / _flattened.width;
+			drawScale9Grid();
 		}
 		#if (!flash) return val; #end
 	}
-	
+
+
 	@:setter(height)
 	#if (!flash) override #end private function set_height(val:Float):#if (!flash) Float #else Void #end
 	{
-		if (_scale9BitmapGrid == null) super.height = val;
+		if (_scale9Grid == null) super.height = val;
 		else {
-			_scale9ScaleY = val / _scale9BitmapData.height;
-			drawScale9BitmapData();
+			_scale9ScaleY = val / _flattened.height;
+			drawScale9Grid();
 		}
 		#if (!flash) return val; #end
 	}
-	
-	
-	private function get_scale9BitmapGrid():Rectangle {
-		return _scale9BitmapGrid;
-	}
 
-	private function set_scale9BitmapGrid(value:Rectangle):Rectangle {
+
+	private function setScale9Grid(value:Rectangle):Void {
 
 		if (value != null) {
 
-			_scale9Offset = getOffset();
-			_scale9BitmapData = flatten();
-			_scale9BitmapGrid = value;
+			_flattened = flatten();
+			_scale9Grid = value;
 			removeAllChildren();
-			drawScale9BitmapData();
+			drawScale9Grid();
 
 		} else {
 
-			_scale9BitmapGrid = value;
-			unflatten();
+			_scale9Grid = null;
+			lastUpdate = -1;
+			update ();
 
 		}
-		
-		return value;
 	}
 	
 	
