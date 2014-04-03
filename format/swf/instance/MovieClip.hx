@@ -116,44 +116,6 @@ class MovieClip extends flash.display.MovieClip {
 
 	
 	
-	public function flatten ():BitmapData {
-
-		var bitmapData = data.swf.getCachedBitmapData(data.characterId);
-
-		//load from the cache first
-		if(bitmapData != null) {
-
-			return bitmapData;
-
-		}
-
-		update();
-
-		var margin = FLATTEN_MARGIN*2;
-		var bounds = getBounds(this);
-		var width = Math.floor(bounds.width);
-		var height = Math.floor(bounds.height);
-		var left = Math.floor(bounds.x - margin/2);
-		var top = Math.floor(bounds.y - margin/2);
-
-		//draw it
-		if (bounds != null && bounds.width > 0 && bounds.height > 0) {
-
-			bitmapData = new BitmapData (width, height, true, 0x00000000);
-			var matrix = new Matrix ();
-			matrix.translate (-left, -top);
-			matrix.scale((width-margin)/width, (height-margin)/height); //scale down so it is all rendered
-			bitmapData.draw (this, matrix, false);
-
-		}
-
-		return bitmapData;
-
-	}
-
-
-	
-	
 	public override function gotoAndPlay (frame:#if flash flash.utils.Object #else Dynamic #end, scene:String = null):Void {
 		
 		__currentFrame = getFrame (frame);
@@ -566,6 +528,42 @@ class MovieClip extends flash.display.MovieClip {
 	}
 
 
+	public function flatten ():BitmapData {
+
+		var bitmapData = data.swf.getCachedBitmapData(data.characterId);
+
+//load from the cache first
+		if(bitmapData != null) {
+
+			return bitmapData;
+
+		}
+
+		update();
+
+		var margin = FLATTEN_MARGIN*2;
+		var bounds = getBounds(this);
+		var width = Math.floor(bounds.width);
+		var height = Math.floor(bounds.height);
+		var left = Math.floor(bounds.x - margin/2);
+		var top = Math.floor(bounds.y - margin/2);
+
+//draw it
+		if (bounds != null && bounds.width > 0 && bounds.height > 0) {
+
+			bitmapData = new BitmapData (width, height, true, 0x00000000);
+			var matrix = new Matrix ();
+			matrix.translate (-left, -top);
+			matrix.scale((width-margin)/width, (height-margin)/height); //scale down so it is all rendered
+			bitmapData.draw (this, matrix, true);
+
+		}
+
+		return bitmapData;
+
+	}
+
+
 
 	private function drawScale9Grid():Void {
 
@@ -578,8 +576,6 @@ class MovieClip extends flash.display.MovieClip {
 		var offset = getOffset();
 
 		//align
-		offset.x += FLATTEN_MARGIN;
-		offset.y += FLATTEN_MARGIN;
 
 		//precompute some helper variables
 		var matrix = new Matrix();
@@ -632,13 +628,12 @@ class MovieClip extends flash.display.MovieClip {
 				}
 
 				//now draw it
-				graphics.beginBitmapFill(bitmap, matrix, false, false);
-				graphics.drawRect(Math.floor(dx), Math.floor(dy), Math.ceil(w), Math.ceil(h));
+				graphics.beginBitmapFill(bitmap, matrix, false, true);
+				graphics.drawRect(dx, dy, w+1, h+1);
 				graphics.endFill();
 				dx += w;
 
 			}
-
 
 			dx = offset.x * scaleX;
 			dy += h;
