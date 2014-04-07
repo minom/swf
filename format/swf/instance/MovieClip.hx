@@ -2,13 +2,6 @@ package format.swf.instance;
 
 
 import Math;
-import Math;
-import Math;
-import Math;
-import Math;
-import Math;
-import Math;
-import Math;
 import format.swf.tags.TagPlaceObject3;
 import haxe.CallStack;
 import haxe.Timer;
@@ -575,7 +568,6 @@ class MovieClip extends flash.display.MovieClip {
 		var scale9Rect = _scale9Grid;
 		var offset = getOffset();
 
-		//align
 
 		//precompute some helper variables
 		var matrix = new Matrix();
@@ -585,6 +577,8 @@ class MovieClip extends flash.display.MovieClip {
 		var outerHeight = bitmap.height - (rows[2] - rows[1]);
 		var innerScaleX = (drawWidth - outerWidth) / (bitmap.width - outerWidth);
 		var innerScaleY = (drawHeight - outerHeight) / (bitmap.height - outerHeight);
+		var outerScaleX = Math.max(Math.min(drawWidth / outerWidth, 1), 0);
+		var outerScaleY = Math.max(Math.min(drawHeight / outerHeight, 1), 0);
 		var scaleX = drawWidth / bitmap.width;
 		var scaleY = drawHeight / bitmap.height;
 		var dx = offset.x * scaleX;
@@ -592,8 +586,12 @@ class MovieClip extends flash.display.MovieClip {
 		var w = 0.0;
 		var h = 0.0;
 
+
+
 		//clear previous scale9 drawing
 		graphics.clear();
+
+		if(scaleX == 0 || scaleY == 0) return;
 
 		//loop through and draw each section of the scale9Grid
 		for(row in 0...3) {
@@ -601,8 +599,8 @@ class MovieClip extends flash.display.MovieClip {
 
 				var sourceX = cols[col];
 				var sourceY = rows[row];
-				w = cols[col+1] - cols[col];
-				h = rows[row+1] - rows[row];
+				w = (cols[col+1] - cols[col]) * outerScaleX;
+				h = (rows[row+1] - rows[row]) * outerScaleY;
 
 				//this makes sure the bitmap is drawn in the right spot to be drawn
 				matrix.identity();
