@@ -61,8 +61,6 @@ class MovieClip extends flash.display.MovieClip {
 	
 	private var _scale9Grid:Rectangle;
 	private var _flattened:BitmapData;
-	private var _scale9ScaleX:Float = 1;
-	private var _scale9ScaleY:Float = 1;
 
 	public function new (data:TagDefineSprite) {
 
@@ -380,17 +378,7 @@ class MovieClip extends flash.display.MovieClip {
 
 		if (Std.is(displayObject, MovieClip)) {
 			var mc:MovieClip = cast displayObject;
-			if (mc._scale9Grid != null && (mc.transform.matrix.a != oldScaleX || mc.transform.matrix.d != oldScaleY)) {
-
-				mc._scale9ScaleX = mc.transform.matrix.a;
-				mc._scale9ScaleY = mc.transform.matrix.d;
-
-				var mt:Matrix = mc.transform.matrix;
-
-				mt.a = 1;
-				mt.d = 1;
-
-				mc.transform.matrix = mt;
+			if (mc._scale9Grid != null) {
 				mc.drawScale9Grid();
 			}
 		}
@@ -563,11 +551,10 @@ class MovieClip extends flash.display.MovieClip {
 		if(_flattened == null) return;
 
 		var bitmap = _flattened;
-		var drawWidth = _flattened.width * _scale9ScaleX;
-		var drawHeight = _flattened.height* _scale9ScaleY;
+		var drawWidth = _flattened.width * scaleX;
+		var drawHeight = _flattened.height * scaleY;
 		var scale9Rect = _scale9Grid;
 		var offset = getOffset();
-
 
 		//precompute some helper variables
 		var matrix = new Matrix();
@@ -585,8 +572,6 @@ class MovieClip extends flash.display.MovieClip {
 		var dy = offset.y * scaleY;
 		var w = 0.0;
 		var h = 0.0;
-
-
 
 		//clear previous scale9 drawing
 		graphics.clear();
@@ -626,8 +611,9 @@ class MovieClip extends flash.display.MovieClip {
 				}
 
 				//now draw it
+				matrix.scale(1/scaleX, 1/scaleY);
 				graphics.beginBitmapFill(bitmap, matrix, false, true);
-				graphics.drawRect(dx, dy, w+1, h+1);
+				graphics.drawRect(dx/scaleX, dy/scaleY, (w+1)/scaleX, (h+1)/scaleY);
 				graphics.endFill();
 				dx += w;
 
@@ -749,57 +735,36 @@ class MovieClip extends flash.display.MovieClip {
 		
 	}
 	#end
-	
-	
+
+
 	// Overriding properties for scale9Grid to work
 	@:setter(scaleX)
 	#if (!flash) override #end private function set_scaleX(val:Float):#if (!flash) Float #else Void #end
 	{
-		if (_scale9Grid == null) super.scaleX = val;
-		else {
-			super.scaleX = 1;
-			_scale9ScaleX = val;
-			drawScale9Grid();
-		}
+		super.scaleX = val;
+		drawScale9Grid();
+
 		#if (!flash) return val; #end
-	}
-
-
-	@:getter(scaleX)
-	#if (!flash) override #end private function get_scaleX():Float {
-		if (_scale9Grid == null) return super.scaleX;
-		else return _scale9ScaleX;
 	}
 
 
 	@:setter(scaleY)
 	#if (!flash) override #end private function set_scaleY(val:Float):#if (!flash) Float #else Void #end
 	{
-		if (_scale9Grid == null) super.scaleY = val;
-		else {
-			super.scaleY = 1;
-			_scale9ScaleY = val;
-			drawScale9Grid();
-		}
+		super.scaleY = val;
+		drawScale9Grid();
+
 		#if (!flash) return val; #end
 	}
 
 
-	@:getter(scaleY)
-	#if (!flash) override #end private function get_scaleY():Float {
-		if (_scale9Grid == null) return super.scaleY;
-		else return _scale9ScaleY;
-	}
-	
-	
 	@:setter(width)
 	#if (!flash) override #end private function set_width(val:Float):#if (!flash) Float #else Void #end
 	{
-		if (_scale9Grid == null) super.width = val;
-		else {
-			_scale9ScaleX = val / _flattened.width;
-			drawScale9Grid();
-		}
+		super.width = val;
+		set_scaleX(val / _flattened.width);
+		drawScale9Grid();
+
 		#if (!flash) return val; #end
 	}
 
@@ -807,11 +772,10 @@ class MovieClip extends flash.display.MovieClip {
 	@:setter(height)
 	#if (!flash) override #end private function set_height(val:Float):#if (!flash) Float #else Void #end
 	{
-		if (_scale9Grid == null) super.height = val;
-		else {
-			_scale9ScaleY = val / _flattened.height;
-			drawScale9Grid();
-		}
+		super.height = val;
+		set_scaleY(val / _flattened.height);
+		drawScale9Grid();
+
 		#if (!flash) return val; #end
 	}
 
@@ -833,19 +797,19 @@ class MovieClip extends flash.display.MovieClip {
 
 		}
 	}
-	
-	
-	// Event Handlers
+
+
+// Event Handlers
 
 	private static function stage_onEnterFrame (event:Event):Void {
-		
+
 		for (clip in clips) {
-			
+
 			clip.enterFrame ();
-			
+
 		}
-		
+
 	}
-	
-	
+
+
 }
