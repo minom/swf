@@ -564,8 +564,8 @@ class MovieClip extends flash.display.MovieClip {
 		var outerHeight = bitmap.height - (rows[2] - rows[1]);
 		var innerScaleX = (drawWidth - outerWidth) / (bitmap.width - outerWidth);
 		var innerScaleY = (drawHeight - outerHeight) / (bitmap.height - outerHeight);
-		var outerScaleX = Math.max(Math.min(drawWidth / outerWidth, 1), 0);
-		var outerScaleY = Math.max(Math.min(drawHeight / outerHeight, 1), 0);
+		var outerScaleX = 1;//Math.max(Math.min(drawWidth / outerWidth, 1), 0);
+		var outerScaleY =1;// Math.max(Math.min(drawHeight / outerHeight, 1), 0);
 		var scaleX = drawWidth / bitmap.width;
 		var scaleY = drawHeight / bitmap.height;
 		var dx = offset.x * scaleX;
@@ -742,7 +742,7 @@ class MovieClip extends flash.display.MovieClip {
 	#if (!flash) override #end private function set_scaleX(val:Float):#if (!flash) Float #else Void #end
 	{
 		super.scaleX = val;
-		drawScale9Grid();
+		if(_scale9Grid != null) drawScale9Grid();
 
 		#if (!flash) return val; #end
 	}
@@ -752,7 +752,7 @@ class MovieClip extends flash.display.MovieClip {
 	#if (!flash) override #end private function set_scaleY(val:Float):#if (!flash) Float #else Void #end
 	{
 		super.scaleY = val;
-		drawScale9Grid();
+		if(_scale9Grid != null) drawScale9Grid();
 
 		#if (!flash) return val; #end
 	}
@@ -762,8 +762,7 @@ class MovieClip extends flash.display.MovieClip {
 	#if (!flash) override #end private function set_width(val:Float):#if (!flash) Float #else Void #end
 	{
 		super.width = val;
-		set_scaleX(val / _flattened.width);
-		drawScale9Grid();
+		if(_scale9Grid != null) set_scaleX(val / _flattened.width);
 
 		#if (!flash) return val; #end
 	}
@@ -773,8 +772,7 @@ class MovieClip extends flash.display.MovieClip {
 	#if (!flash) override #end private function set_height(val:Float):#if (!flash) Float #else Void #end
 	{
 		super.height = val;
-		set_scaleY(val / _flattened.height);
-		drawScale9Grid();
+		if(_scale9Grid != null) set_scaleY(val / _flattened.height);
 
 		#if (!flash) return val; #end
 	}
