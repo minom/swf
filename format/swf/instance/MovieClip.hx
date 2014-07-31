@@ -161,20 +161,6 @@ class MovieClip extends flash.display.MovieClip {
 		}
 		
 	}
-
-
-	public override function stop ():Void {
-
-		if (playing) {
-
-			playing = false;
-			clips.remove (this);
-
-			if (clips.length == 0) Lib.current.stage.removeEventListener (Event.ENTER_FRAME, stage_onEnterFrame);
-
-		}
-
-	}
 	
 	
 	public override function prevFrame ():Void {
