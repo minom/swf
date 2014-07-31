@@ -1,6 +1,6 @@
 package format.swf;
 
-import Type;
+#if test_abc
 import format.swf.tags.TagDefineScalingGrid;
 import format.abc.Data.ABCData;
 import format.abc.Data.ClassDef;
@@ -9,6 +9,7 @@ import format.abc.Data.IName;
 import format.abc.Data.Index;
 import format.abc.Data.Name;
 import format.abc.Data.Namespace;
+#end
 import format.SWF;
 import format.swf.data.SWFFrameLabel;
 import format.swf.data.SWFRawTag;
@@ -96,10 +97,12 @@ class SWFTimelineContainer extends SWFEventDispatcher
 	public var swf:SWF;
 	public var backgroundColor:Int;
 	public var jpegTablesTag:TagJPEGTables;
-
+	
+	#if test_abc
 	public var abcTag:TagDoABC;
 	public var abcData:ABCData;
 	public var abcClasses(default, null):Map<Int, ClassDef>;
+	#end
 	
 	
 	public function new(swf:SWF)
@@ -338,8 +341,10 @@ class SWFTimelineContainer extends SWFEventDispatcher
 			case TagDefineScalingGrid.TYPE:
 				processScalingGridTag(cast tag);
 			// Actionscript 3
+			#if test_abc
 			case TagDoABC.TYPE:
 				if (SWF.parseABC) processAS3Tag(cast tag, currentTagIndex);
+			#end
 		}
 	}
 	
@@ -443,6 +448,8 @@ class SWFTimelineContainer extends SWFEventDispatcher
 	private function processScalingGridTag(tag:TagDefineScalingGrid):Void {
 		swf.scalingGrids.set (tag.characterId, tag);
 	}
+	
+	#if test_abc
 
 	private function processAS3Tag(tag:TagDoABC, currentTagIndex:Int):Void {
 		// Just store it for now
@@ -460,6 +467,7 @@ class SWFTimelineContainer extends SWFEventDispatcher
 		
 	}
 	
+	#end
 	
 	public function buildLayers():Void {
 		var i:Int;

@@ -61,7 +61,15 @@ class MovieClip extends flash.display.MovieClip {
 	
 	private var _scale9Grid:Rectangle;
 	private var _flattened:BitmapData;
-
+	
+	public static function stopAllClips() {
+		if (clips != null) {
+			while (clips.length > 0) {
+				clips[0].stop();
+			}
+		}
+	}
+	
 	public function new (data:TagDefineSprite) {
 
 		super ();
@@ -474,6 +482,37 @@ class MovieClip extends flash.display.MovieClip {
 	}
 	
 	
+	public override function stop ():Void {
+		
+		if (playing) {
+			
+			playing = false;
+			clips.remove (this);
+			
+			if (clips.length == 0) Lib.current.stage.removeEventListener (Event.ENTER_FRAME, stage_onEnterFrame);
+			
+		}
+		
+	}
+	
+	
+	public /*override*/ function unflatten ():Void {
+		var bmp_do = getChildAt(0);
+		if (bmp_do != null && Std.is(bmp_do, Bitmap)) {
+			removeChild(bmp_do);
+			var bmp:Bitmap = cast bmp_do;
+			#if flash
+			bmp.bitmapData.dispose();
+			#end
+			bmp.bitmapData = null;
+		}
+		
+		lastUpdate = -1;
+		update ();
+		
+	}
+	
+	
 	private function update ():Void {
 
 		if(_scale9Grid != null) return;
@@ -491,15 +530,16 @@ class MovieClip extends flash.display.MovieClip {
 
 			var frame = data.frames[frameIndex];
 			
-			#if flash
+			//#if flash
 			__currentFrameLabel = frame.label;
 
+			
 			if (frameIndex == 0 || frame.label != null) {
 
 				__currentLabel = frame.label;
 
 			}
-			#end
+			//#end
 			
 		}
 
@@ -728,6 +768,9 @@ class MovieClip extends flash.display.MovieClip {
 		
 	}
 	
+	@:getter(currentLabel) private function get_currentLabel():String {
+		return __currentLabel;
+	}
 	
 	@:getter public function get___totalFrames():Int {
 		

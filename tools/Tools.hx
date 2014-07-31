@@ -15,10 +15,10 @@ import haxe.Unserializer;
 import helpers.LogHelper;
 import helpers.PlatformHelper;
 import helpers.StringHelper;
-import openfl.Assets;
 import project.Architecture;
 import project.Asset;
 import project.AssetEncoding;
+import project.AssetType;
 import project.Haxelib;
 import project.HXProject;
 import project.Platform;
@@ -192,7 +192,7 @@ class Tools {
 				
 				type = Path.extension (library.sourcePath).toLowerCase ();
 				
-				if (type == "swf" && project.target == Platform.HTML5) {
+				if (type == "swf" && (project.target == Platform.HTML5 || project.target == Platform.FIREFOXOS)) {
 					
 					type = "swflite";
 					
@@ -236,7 +236,10 @@ class Tools {
 				
 				var data = new SWFLibrary ("libraries/" + library.name + ".swf", cachePath);
 				var asset = new Asset ("", "libraries/" + library.name + ".dat", AssetType.TEXT);
-				asset.data = Serializer.run (data);
+				var serializer = new Serializer ();
+				serializer.useCache = true;
+				serializer.serialize (data);
+				asset.data = serializer.toString ();
 				output.assets.push (asset);
 				
 				embeddedSWF = true;
@@ -276,7 +279,10 @@ class Tools {
 				var data = new SWFLiteLibrary (swfLite);
 				
 				var asset = new Asset ("", "libraries/" + library.name + ".dat", AssetType.TEXT);
-				asset.data = Serializer.run (data);
+				var serializer = new Serializer ();
+				serializer.useCache = true;
+				serializer.serialize (data);
+				asset.data = serializer.toString ();
 				output.assets.push (asset);
 				
 				embeddedSWFLite = true;
@@ -289,8 +295,6 @@ class Tools {
 			
 			output.haxelibs.push (new Haxelib ("format"));
 			output.haxeflags.push ("format.swf.SWFLibrary");
-			output.haxeflags.remove ("--remap flash:flash");
-			output.haxeflags.push ("--remap flash:flash");
 			
 		}
 		
@@ -303,9 +307,6 @@ class Tools {
 				output.haxeflags.push (filterClass);
 				
 			}
-			
-			output.haxeflags.remove ("--remap flash:flash");
-			output.haxeflags.push ("--remap flash:flash");
 			
 		}
 		
