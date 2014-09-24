@@ -1,6 +1,7 @@
 package format;
 
 
+import flash.events.TimerEvent;
 import format.swf.tags.TagDefineScalingGrid;
 import flash.display.BitmapData;
 import openfl.Assets;
@@ -61,7 +62,8 @@ class SWF extends EventDispatcher {
 		height = Std.int (data.frameSize.rect.height);
 		
 		symbols = data.symbols;
-		
+
+		trace('loading xx ');		
 		
 		#if flash
 		
@@ -111,9 +113,10 @@ class SWF extends EventDispatcher {
 		#end
 		
 	}
-	
+
+	private var tmr:flash.utils.Timer;
 	inline private function dispatchCompleteTimer():Void {
-		var tmr = new flash.utils.Timer(1, 1);
+		tmr = new flash.utils.Timer(1, 1);
 		tmr.addEventListener(flash.events.TimerEvent.TIMER_COMPLETE, dispatchComplete);
 		tmr.start();
 	}
@@ -121,6 +124,10 @@ class SWF extends EventDispatcher {
 	private function dispatchComplete(e:flash.events.TimerEvent):Void 
 	{
 		complete = true;
+		trace('removed timer listener');
+		tmr.removeEventListener(flash.events.TimerEvent.TIMER_COMPLETE, dispatchComplete);
+		tmr.stop();
+		tmr = null;
 		dispatchEvent (new Event (Event.COMPLETE));
 	}
 	

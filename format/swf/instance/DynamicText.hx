@@ -39,7 +39,9 @@ class DynamicText extends TextField {
 		
 		var rect = tag.bounds.rect;
 		
-		offset = new Matrix (1, 0, 0, 1, rect.x, rect.y - 2);
+		offset = new Matrix (1, 0, 0, 1, rect.x, rect.y+1);
+		//trace('offset = ' + offset.x + ',' + offset.y + ' - ' + rect.x + 'x' + rect.y);
+
 		width = rect.width;
 		height = rect.height;
 		
@@ -52,60 +54,65 @@ class DynamicText extends TextField {
 		var format = new TextFormat ();
 		if (tag.hasTextColor) format.color = (tag.textColor & 0x00FFFFFF);
 		format.size = (tag.fontHeight / 20);
-		
+
+		// commenting out font stuff had no effect
 		if (tag.hasFont) {
-			
+
 			var font = data.getCharacter (tag.fontId);
-			
+
 			if (Std.is (font, TagDefineFont2)) {
-				
+
 				#if (cpp || neko)
-				
+
 				var fontName =  cast (font, TagDefineFont2).fontName;
-				
+
 				if (fontName.charCodeAt (fontName.length - 1) == 0) {
-					
+
 					fontName = fontName.substr (0, fontName.length - 1).split (" ").join ("");
-					
+
 				}
-				
+
 				var fonts = Font.enumerateFonts (false);
 				var foundFont = false;
-				
+
 				for (font in fonts) {
-					
+
+					//trace('trying to find: ' + font.fontName + ' = ' + fontName);
+
 					if (font.fontName == fontName) {
-						
+
 						foundFont = true;
 						format.font = fontName;
 						break;
-						
+
 					}
-					
+
 				}
-				
+
 				if (!foundFont) {
-					
+					trace('>>>>>FAILED >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  enumerating FONT = ' + fontName);
+
 					format.font = getFont (cast font, format.color);
-					
+
 				}
-				
+
 				#else
-				
+
 				format.font = cast (font, TagDefineFont2).fontName;
-				
+
 				#end
-				
+
 				embedFonts = true;
-				
+
 			}
-			
+
 		}
+		// to here
 		
 		format.leftMargin = tag.leftMargin / 20;
 		format.rightMargin = tag.rightMargin / 20;
 		format.indent = tag.indent / 20;
-		format.leading = tag.leading / 20;
+		format.leading = (tag.leading / 20)-4;
 		
 		switch (tag.align) {
 			
@@ -236,7 +243,7 @@ class SWFFont extends AbstractFont {
 	
 	
 	public override function renderGlyph (charCode:Int):BitmapData {
-		
+
 		if (!bitmapData.exists (charCode)) {
 			
 			var index = -1;

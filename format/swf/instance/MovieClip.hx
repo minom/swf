@@ -78,6 +78,8 @@ class MovieClip extends flash.display.MovieClip {
 		
 		if (!initialized) {
 			
+			trace('initilizing');
+
 			clips = new Array <MovieClip> ();
 			initialized = true;
 			
