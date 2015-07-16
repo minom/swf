@@ -89,8 +89,8 @@ class DynamicTextField extends TextField {
 			format.leftMargin = Std.int (symbol.leftMargin / 20);
 			format.rightMargin = Std.int (symbol.rightMargin / 20);
 			format.indent = Std.int (symbol.indent / 20);
-			format.leading = symbol.leading;
 
+			format.leading = Std.int(symbol.leading / 30);
 			#if flash
 			if (embedFonts) format.leading = Std.int (symbol.leading / 20) + 6; // TODO: Is this an issue of Flash fonts are embedded?
 			#end
