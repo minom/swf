@@ -17,10 +17,6 @@ import format.swf.tags.TagDefineButton2;
 import format.swf.tags.TagDefineSprite;
 import format.swf.tags.TagSymbolClass;
 
-#if !haxe3
-typedef Map<String, T> = Hash<T>;
-#end
-
 
 class SWF extends EventDispatcher {
 	
@@ -129,9 +125,10 @@ class SWF extends EventDispatcher {
 	
 	
 	public function createButton (className:String):SimpleButton {
+		
 		var symbol:Dynamic = null;
 		var charId:Int;
-			
+		
 		if (symbols.exists (className)) {
 			charId = symbols.get (className);
 			symbol = data.getCharacter (charId);

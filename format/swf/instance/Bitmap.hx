@@ -116,13 +116,15 @@ class Bitmap extends flash.display.Bitmap {
 				}
 				
 				bitmapData = new BitmapData (data.bitmapWidth, data.bitmapHeight, transparent);
-				bitmapData.setPixels (bitmapData.rect, buffer);
 				
-				#if ((cpp || neko) && !openfl_next)
+				#if ((cpp || neko) && openfl_legacy)
+				bitmapData.setPixels (bitmapData.rect, buffer);
 				bitmapData.unmultiplyAlpha ();
-				//bitmapData.setAlphaMode (1);
 				#else
-				//bitmapData.__image.premultiplied = true;
+				bitmapData.image.buffer.premultiplied = false;
+				bitmapData.setPixels (bitmapData.rect, buffer);
+				bitmapData.image.buffer.premultiplied = true;
+				bitmapData.image.premultiplied = false;
 				#end
 				
 				data.instance = bitmapData;
@@ -146,17 +148,19 @@ class Bitmap extends flash.display.Bitmap {
 					var alpha = cast (tag, TagDefineBitsJPEG3).bitmapAlphaData;
 					alpha.uncompress ();
 					
-					#if ((cpp || neko) && !openfl_next)
+					#if ((cpp || neko) && openfl_legacy)
 					bitmapData = BitmapData.loadFromBytes (data.bitmapData, alpha);
 					bitmapData.unmultiplyAlpha ();
 					#else
 					bitmapData = BitmapData.fromBytes (data.bitmapData, alpha);
+					bitmapData.image.buffer.premultiplied = true;
+					bitmapData.image.premultiplied = false;
 					#end
 					//bitmapData.setAlphaMode (1);
 					
 				} else {
 					
-					#if ((cpp || neko) && !openfl_next)
+					#if ((cpp || neko) && openfl_legacy)
 					bitmapData = BitmapData.loadFromBytes (data.bitmapData, null);
 					#else
 					bitmapData = BitmapData.fromBytes (data.bitmapData, null);
@@ -182,7 +186,7 @@ class Bitmap extends flash.display.Bitmap {
 			
 			#else
 			
-			#if ((cpp || neko) && !openfl_next)
+			#if ((cpp || neko) && openfl_legacy)
 			bitmapData = BitmapData.loadFromBytes (data.bitmapData, null);
 			#else
 			bitmapData = BitmapData.fromBytes (data.bitmapData, null);

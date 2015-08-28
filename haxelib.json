@@ -4,7 +4,7 @@
   "license": "MIT",
   "tags": [ ],
   "description": "Provides support for parsing and displaying SWF content",
-  "version": "1.8.9",
-  "releasenote": "Improvements to font leading",
+  "version": "2.0.0",
+  "releasenote": "Add multi-frame support to SWFLite, SimpleButton support, do not use OpenFL legacy in tools",
   "contributors": [ "singmajesty" ]
 }

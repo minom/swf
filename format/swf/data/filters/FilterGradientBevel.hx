@@ -8,7 +8,7 @@ import flash.filters.BitmapFilterType;
 import flash.filters.GradientBevelFilter; // Not supported on native yet
 #end
 
-class FilterGradientBevel extends FilterGradientGlow #if !haxe3 , #end implements IFilter
+class FilterGradientBevel extends FilterGradientGlow implements IFilter
 {
 	public function new (id:Int) {
 		super(id);
@@ -48,7 +48,7 @@ class FilterGradientBevel extends FilterGradientGlow #if !haxe3 , #end implement
 			knockout
 		);
 		#else
-		#if ((cpp || neko) && !openfl_next)
+		#if ((cpp || neko) && openfl_legacy)
 		return new BitmapFilter ("");
 		#else
 		return new BitmapFilter ();

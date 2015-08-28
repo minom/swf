@@ -9,7 +9,7 @@ import flash.filters.BitmapFilter;
 import flash.filters.ConvolutionFilter; // Not supported on native yet
 #end
 
-class FilterConvolution extends Filter #if !haxe3 , #end implements IFilter
+class FilterConvolution extends Filter implements IFilter
 {
 	public var matrixX:Int;
 	public var matrixY:Int;
@@ -44,7 +44,7 @@ class FilterConvolution extends Filter #if !haxe3 , #end implements IFilter
 			ColorUtils.alpha(defaultColor)
 		);
 		#else
-		#if ((cpp || neko) && !openfl_next)
+		#if ((cpp || neko) && openfl_legacy)
 		return new BitmapFilter ("");
 		#else
 		return new BitmapFilter ();

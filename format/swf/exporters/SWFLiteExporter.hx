@@ -3,11 +3,12 @@ package format.swf.exporters;
 
 import flash.display.BitmapData;
 import flash.text.TextFormatAlign;
+import format.swf.data.SWFButtonRecord;
 import format.swf.exporters.core.FilterType;
 import format.swf.exporters.core.ShapeCommand;
 import format.swf.instance.Bitmap;
-import format.swf.lite.SWFLite;
 import format.swf.lite.symbols.BitmapSymbol;
+import format.swf.lite.symbols.ButtonSymbol;
 import format.swf.lite.symbols.DynamicTextSymbol;
 import format.swf.lite.symbols.FontSymbol;
 import format.swf.lite.symbols.ShapeSymbol;
@@ -16,12 +17,13 @@ import format.swf.lite.symbols.StaticTextSymbol;
 import format.swf.lite.symbols.SWFSymbol;
 import format.swf.lite.timeline.Frame;
 import format.swf.lite.timeline.FrameObject;
-import format.swf.SWFTimelineContainer;
+import format.swf.lite.SWFLite;
 import format.swf.tags.IDefinitionTag;
 import format.swf.tags.TagDefineBits;
 import format.swf.tags.TagDefineBitsJPEG2;
 import format.swf.tags.TagDefineBitsLossless;
 import format.swf.tags.TagDefineButton;
+import format.swf.tags.TagDefineButton2;
 import format.swf.tags.TagDefineEditText;
 import format.swf.tags.TagDefineFont;
 import format.swf.tags.TagDefineFont2;
@@ -32,6 +34,7 @@ import format.swf.tags.TagDefineText;
 import format.swf.tags.TagPlaceObject;
 import format.swf.tags.TagSymbolClass;
 import format.swf.SWFRoot;
+import format.swf.SWFTimelineContainer;
 
 
 class SWFLiteExporter {
@@ -73,9 +76,109 @@ class SWFLiteExporter {
 	}
 	
 	
-	private function addButton (tag:TagDefineButton):SWFSymbol {
+	private function addButton (tag:IDefinitionTag):SWFSymbol {
 		
-		return null;
+		var symbol = new ButtonSymbol ();
+		
+		if (Std.is (tag, IDefinitionTag)) {
+			
+			symbol.id = untyped tag.characterId;
+			
+		}
+		
+		var processRecords = function (records:Array<SWFButtonRecord>) {
+			
+			if (records.length > 0) {
+				
+				var sprite = new SpriteSymbol ();
+				var frame = new Frame ();
+				
+				for (i in 0...records.length) {
+					
+					var object = records[i];
+					
+					var frameObject = new FrameObject ();
+					frameObject.id = object.characterId;
+					
+					processTag (cast data.getCharacter (object.characterId));
+					
+					if (object.placeMatrix != null) {
+						
+						var matrix = object.placeMatrix.matrix;
+						matrix.tx *= (1 / 20);
+						matrix.ty *= (1 / 20);
+						
+						frameObject.matrix = matrix;
+						
+					}
+					
+					if (object.colorTransform != null) {
+						
+						frameObject.colorTransform = object.colorTransform.colorTransform;
+						
+					}
+					
+					if (object.hasFilterList) {
+						
+						var filters:Array<FilterType> = [];
+						
+						for (filter in object.filterList) {
+							
+							var type = filter.type;
+							
+							if (type != null) {
+								
+								filters.push (filter.type);
+								//filterClasses.set (Type.getClassName (Type.getClass (surfaceFilter.filter)), true);
+								
+							}
+							
+						}
+						
+						frameObject.filters = filters;
+						
+					}
+					
+					frameObject.depth = i;
+					frameObject.clipDepth = 0;
+					
+					frame.objects.push (frameObject);
+					
+				}
+				
+				sprite.frames.push (frame);
+				
+				return sprite;
+				
+			}
+			
+			return null;
+			
+		}
+		
+		if (Std.is (tag, TagDefineButton)) {
+			
+			var defineButton:TagDefineButton = cast tag;
+			
+			symbol.downState = processRecords (defineButton.getRecordsByState (TagDefineButton.STATE_DOWN));
+			symbol.hitState = processRecords (defineButton.getRecordsByState (TagDefineButton.STATE_HIT));
+			symbol.overState = processRecords (defineButton.getRecordsByState (TagDefineButton.STATE_OVER));
+			symbol.upState = processRecords (defineButton.getRecordsByState (TagDefineButton.STATE_UP));
+			
+		} else {
+			
+			var defineButton:TagDefineButton2 = cast tag;
+			
+			symbol.downState = processRecords (defineButton.getRecordsByState (TagDefineButton.STATE_DOWN));
+			symbol.hitState = processRecords (defineButton.getRecordsByState (TagDefineButton.STATE_HIT));
+			symbol.overState = processRecords (defineButton.getRecordsByState (TagDefineButton.STATE_OVER));
+			symbol.upState = processRecords (defineButton.getRecordsByState (TagDefineButton.STATE_UP));
+			
+		}
+		
+		swfLite.symbols.set (symbol.id, symbol);
+		
+		return symbol;
 		
 	}
 	
@@ -180,66 +283,69 @@ class SWFLiteExporter {
 			
 		}
 		
-		// TODO: Handle more frames, skipping frames without relevant data
-		
-		var frame = new Frame ();
-		frame.label = tag.frames[0].label;
-		
-		for (object in tag.frames[0].getObjectsSortedByDepth ()) {
+		for (i in 0...tag.frames.length) {
+		//for (i in 0...1) {
 			
-			var frameObject = new FrameObject ();
-			frameObject.id = object.characterId;
+			var frame = new Frame ();
+			frame.label = tag.frames[i].label;
 			
-			processTag (cast data.getCharacter (object.characterId));
-			
-			var placeTag:TagPlaceObject = cast tag.tags[object.placedAtIndex];
-			frameObject.name = placeTag.instanceName;
-			
-			if (placeTag.matrix != null) {
+			for (object in tag.frames[i].getObjectsSortedByDepth ()) {
 				
-				var matrix = placeTag.matrix.matrix;
-				matrix.tx *= (1 / 20);
-				matrix.ty *= (1 / 20);
+				var frameObject = new FrameObject ();
+				frameObject.id = object.characterId;
 				
-				frameObject.matrix = matrix;
+				processTag (cast data.getCharacter (object.characterId));
 				
-			}
-			
-			if (placeTag.colorTransform != null) {
+				var placeTag:TagPlaceObject = cast tag.tags[object.placedAtIndex];
+				frameObject.name = placeTag.instanceName;
 				
-				frameObject.colorTransform = placeTag.colorTransform.colorTransform;
-				
-			}
-			
-			if (placeTag.hasFilterList) {
-				
-				var filters:Array<FilterType> = [];
-				
-				for (surfaceFilter in placeTag.surfaceFilterList) {
+				if (placeTag.matrix != null) {
 					
-					var type = surfaceFilter.type;
+					var matrix = placeTag.matrix.matrix;
+					matrix.tx *= (1 / 20);
+					matrix.ty *= (1 / 20);
 					
-					if (type != null) {
-						
-						filters.push (surfaceFilter.type);
-						//filterClasses.set (Type.getClassName (Type.getClass (surfaceFilter.filter)), true);
-						
-					}
+					frameObject.matrix = matrix;
 					
 				}
 				
-				frameObject.filters = filters;
+				if (placeTag.colorTransform != null) {
+					
+					frameObject.colorTransform = placeTag.colorTransform.colorTransform;
+					
+				}
+				
+				if (placeTag.hasFilterList) {
+					
+					var filters:Array<FilterType> = [];
+					
+					for (surfaceFilter in placeTag.surfaceFilterList) {
+						
+						var type = surfaceFilter.type;
+						
+						if (type != null) {
+							
+							filters.push (surfaceFilter.type);
+							//filterClasses.set (Type.getClassName (Type.getClass (surfaceFilter.filter)), true);
+							
+						}
+						
+					}
+					
+					frameObject.filters = filters;
+					
+				}
+				
+				frameObject.depth = placeTag.depth;
+				frameObject.clipDepth = (placeTag.hasClipDepth ? placeTag.clipDepth : 0);
+				
+				frame.objects.push (frameObject);
 				
 			}
 			
-			frameObject.depth = placeTag.depth;
-			frameObject.clipDepth = (placeTag.hasClipDepth ? placeTag.clipDepth : 0);
-			
-			frame.objects.push (frameObject);
+			symbol.frames.push (frame);
 			
 		}
-		
-		symbol.frames.push (frame);
 		
 		if (root) {
 			
@@ -284,10 +390,10 @@ class SWFLiteExporter {
 			
 			switch (tag.align) {
 				
-				case 0: symbol.align = TextFormatAlign.LEFT;
-				case 1: symbol.align = TextFormatAlign.RIGHT;
-				case 2: symbol.align = TextFormatAlign.CENTER;
-				case 3: symbol.align = TextFormatAlign.JUSTIFY;
+				case 0: symbol.align = "left";
+				case 1: symbol.align = "right";
+				case 2: symbol.align = "center";
+				case 3: symbol.align = "justify";
 				
 			}
 			
@@ -429,7 +535,7 @@ class SWFLiteExporter {
 				
 				return addBitmap (tag);
 				
-			} else if (Std.is (tag, TagDefineButton)) {
+			} else if (Std.is (tag, TagDefineButton) || Std.is (tag, TagDefineButton2)) {
 				
 				return addButton (cast tag);
 				
