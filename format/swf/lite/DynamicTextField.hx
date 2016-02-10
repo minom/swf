@@ -12,6 +12,7 @@ import format.swf.lite.symbols.DynamicTextSymbol;
 import format.swf.lite.symbols.FontSymbol;
 import format.swf.lite.SWFLite;
 
+import htmlparser.HtmlDocument;
 
 class DynamicTextField extends TextField {
 
@@ -22,6 +23,16 @@ class DynamicTextField extends TextField {
 	private var swf:SWFLite;
 	private var _text:String;
 
+	/** Returns the localization identifier from the HTML in a SWF TextField. */
+	public static function getLocalizationIdentifier (html:String) : String
+	{
+		var text:String = "";
+        for (node in new HtmlDocument(html).nodes) {	// convert HTML to text
+        	if (text == "") text  = node.toText();
+        	else 			text += "\\n" + node.toText();
+        }
+        return StringTools.replace(text, "\"", "\\\"");	// escape double-quotes
+	}
 
 	public function new (swf:SWFLite, symbol:DynamicTextSymbol) {
 
@@ -101,10 +112,7 @@ class DynamicTextField extends TextField {
 
 		#if !flash
 
-		var plain = new EReg ("</p>", "g").replace (symbol.text, "\n");
-		plain = new EReg ("<br>", "g").replace (plain, "\n");
-		plain = new EReg ("<.*?>", "g").replace (plain, "");
-		text = StringTools.htmlUnescape (plain);
+		text = getLocalizationIdentifier(symbol.text);
 
 		#else
 
