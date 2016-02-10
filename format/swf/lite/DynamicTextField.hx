@@ -31,7 +31,9 @@ class DynamicTextField extends TextField {
         	if (text == "") text  = node.toText();
         	else 			text += "\\n" + node.toText();
         }
-        return StringTools.replace(text, "\"", "\\\"");	// escape double-quotes
+        text = StringTools.replace(text, "\"", "\\\"");	// escape double-quotes
+        text = ~/[\r\n]/g.replace(text, "\\n");			// escape newline characters
+        return text;
 	}
 
 	public function new (swf:SWFLite, symbol:DynamicTextSymbol) {
