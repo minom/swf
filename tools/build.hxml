@@ -4,6 +4,9 @@
 -lib openfl
 -lib swf
 -lib format
+-lib HtmlParser
 -D lime_cairo
+-D openfl_legacy
+-D lime_legacy
 -D optional_cffi
 --remap flash:openfl
